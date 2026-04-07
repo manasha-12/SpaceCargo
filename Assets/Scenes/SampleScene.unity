@@ -674,7 +674,6 @@ GameObject:
   m_Component:
   - component: {fileID: 620113139}
   - component: {fileID: 620113141}
-  - component: {fileID: 620113140}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -691,48 +690,12 @@ Transform:
   m_GameObject: {fileID: 620113138}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.94, y: -1.73, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.9477, y: 0.9486, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 952451868}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!58 &620113140
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 620113138}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.57125
 --- !u!212 &620113141
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -885,6 +848,7 @@ GameObject:
   m_Component:
   - component: {fileID: 952451868}
   - component: {fileID: 952451869}
+  - component: {fileID: 952451870}
   m_Layer: 0
   m_Name: FuelPickUp
   m_TagString: Untagged
@@ -901,7 +865,7 @@ Transform:
   m_GameObject: {fileID: 952451867}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.86144, y: 4.689, z: 0}
+  m_LocalPosition: {x: 3.44, y: 3.37, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -920,6 +884,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d40d83513ef9e4741a86ee82791a152b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fuelAmount: 10
+--- !u!58 &952451870
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 952451867}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.65
 --- !u!1001 &988023208
 PrefabInstance:
   m_ObjectHideFlags: 0

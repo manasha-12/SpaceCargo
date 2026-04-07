@@ -26,13 +26,14 @@ public class Lander : MonoBehaviour
     private void FixedUpdate()
     {
         OnBeforeForce?.Invoke(this, EventArgs.Empty);
-        Debug.Log(fuelAmount);
+
         if (fuelAmount <= 0f)
         {
+            Debug.Log("Out of fuel!");
             return;
         }
 
-        if (Keyboard.current.upArrowKey.isPressed || 
+        if (Keyboard.current.upArrowKey.isPressed ||
             Keyboard.current.leftArrowKey.isPressed ||
             Keyboard.current.rightArrowKey.isPressed)
         {
@@ -77,8 +78,7 @@ public class Lander : MonoBehaviour
 
         if (relativeVelocityMagnitude > softLandingVelocityMagnitude)
         {
-            // landed to hard!
-            Debug.Log("Landed to hard!");
+            Debug.Log("Landed too hard!");
             return;
         }
 
@@ -87,19 +87,18 @@ public class Lander : MonoBehaviour
 
         if (dotVector < minDotVector)
         {
-            // Landed on a too steep angle!
             Debug.Log("Landed on a too steep angle");
             return;
         }
 
-        Debug.Log("Successful Lnading!");
+        Debug.Log("Successful Landing!");
 
         float maxScoreAmountLandingAngle = 100;
         float scoreDotVectorMultiplier = 10f;
         float landingAngleScore = maxScoreAmountLandingAngle - Mathf.Abs(dotVector - 1f) * scoreDotVectorMultiplier * maxScoreAmountLandingAngle;
 
-        float maxScoreAmountLandingSpped = 100;
-        float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude) * maxScoreAmountLandingSpped;
+        float maxScoreAmountLandingSpeed = 100;
+        float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude) * maxScoreAmountLandingSpeed;
 
         Debug.Log("landing angle score: " + landingAngleScore);
         Debug.Log("landing speed score: " + landingSpeedScore);
@@ -110,12 +109,31 @@ public class Lander : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collider2D)
     {
-        //if (collider2D.gameObject.TryGetComponent<>)
+        Debug.Log("TRIGGER ENTERED with: " + collider2D.gameObject.name);
+
+        if (collider2D.gameObject.TryGetComponent(out FuelPickUp fuelPickUp))
+        {
+            float addFuelAmount = fuelPickUp.GetFuelAmount();
+            fuelAmount += addFuelAmount;
+
+            Debug.Log("Fuel collected! Adding: " + addFuelAmount + " | New fuel total: " + fuelAmount);
+
+            
+        }
+        else
+        {
+            Debug.Log("Trigger object is NOT a FuelPickUp!");
+        }
     }
 
     private void ConsumeFuel()
     {
         float fuelConsumptionValue = 1f;
         fuelAmount -= fuelConsumptionValue * Time.deltaTime;
+    }
+
+    public float GetFuelAmount()
+    {
+        return fuelAmount;
     }
 }
