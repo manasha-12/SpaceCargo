@@ -8,4 +8,9 @@ public class FuelPickUp : MonoBehaviour
     {
         return fuelAmount;
     }
+
+    public void destroySelf()
+    {
+        Destroy(gameObject);
+    }
 }

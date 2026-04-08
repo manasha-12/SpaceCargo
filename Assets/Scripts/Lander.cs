@@ -4,10 +4,19 @@ using UnityEngine.InputSystem;
 
 public class Lander : MonoBehaviour
 {
+    public static Lander Instance { get; private set; }
+
     public event EventHandler OnUpForce;
     public event EventHandler OnRightForce;
     public event EventHandler OnLeftForce;
     public event EventHandler OnBeforeForce;
+
+    public event EventHandler OnCoinPickup;
+    public event EventHandler<OnLandedEventArgs> OnLanded;
+    public class OnLandedEventArgs : EventArgs
+    {
+        public int score;
+    }
 
     private Rigidbody2D landerRigidbody2D;
     private float fuelAmount = 10f;
@@ -15,6 +24,8 @@ public class Lander : MonoBehaviour
     private void Awake()
     {
         landerRigidbody2D = GetComponent<Rigidbody2D>();
+
+        Instance = this;
 
         // Configure rigidbody for smooth movement
         landerRigidbody2D.linearDamping = 0.5f;
@@ -100,17 +111,16 @@ public class Lander : MonoBehaviour
         float maxScoreAmountLandingSpeed = 100;
         float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude) * maxScoreAmountLandingSpeed;
 
-        Debug.Log("landing angle score: " + landingAngleScore);
-        Debug.Log("landing speed score: " + landingSpeedScore);
+        //Debug.Log("landing angle score: " + landingAngleScore);
+        //Debug.Log("landing speed score: " + landingSpeedScore);
 
         int score = Mathf.RoundToInt((landingAngleScore + landingSpeedScore) * landingPad.GetScoreMultiplier());
-        Debug.Log("Score:" + score);
+        //Debug.Log("Score:" + score);
+        OnLanded?.Invoke(this, new OnLandedEventArgs { score = score });
     }
 
     private void OnTriggerEnter2D(Collider2D collider2D)
     {
-        Debug.Log("TRIGGER ENTERED with: " + collider2D.gameObject.name);
-
         if (collider2D.gameObject.TryGetComponent(out FuelPickUp fuelPickUp))
         {
             float addFuelAmount = fuelPickUp.GetFuelAmount();
@@ -118,11 +128,14 @@ public class Lander : MonoBehaviour
 
             Debug.Log("Fuel collected! Adding: " + addFuelAmount + " | New fuel total: " + fuelAmount);
 
-            
+            fuelPickUp.destroySelf();
         }
-        else
+
+        if (collider2D.gameObject.TryGetComponent(out CoinPickup coinPickup))
         {
-            Debug.Log("Trigger object is NOT a FuelPickUp!");
+            OnCoinPickup?.Invoke(this, EventArgs.Empty);
+
+            coinPickup.DestroySelf();
         }
     }
 
