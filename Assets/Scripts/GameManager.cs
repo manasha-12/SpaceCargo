@@ -1,8 +1,16 @@
 using UnityEngine;
 
-public class GeneralGameManager : MonoBehaviour
-{  
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance { get; private set; }
+
     private int score;
+    private float time;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -22,5 +30,10 @@ public class GeneralGameManager : MonoBehaviour
     {
         score += addScoreAmount;
         Debug.Log(score);
+    }
+
+    public int GetScore()
+    {
+        return score;
     }
 }
