@@ -145,7 +145,7 @@ public class Lander : MonoBehaviour
         fuelAmount -= fuelConsumptionValue * Time.deltaTime;
     }
 
-    public float GetFuelAmount()
+    public float GetFuel()
     {
         return fuelAmount;
     }
