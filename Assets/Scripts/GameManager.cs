@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -18,6 +19,11 @@ public class GameManager : MonoBehaviour
         Lander.Instance.OnLanded += Lander_OnLanded;
     }
 
+    private void Update()
+    {
+        time += Time.deltaTime;
+    }
+
     private void Lander_OnLanded(object sender, Lander.OnLandedEventArgs e)
     {
         AddScore(e.score);
@@ -35,5 +41,10 @@ public class GameManager : MonoBehaviour
     public int GetScore()
     {
         return score;
+    }
+
+    public float GetTime()
+    {
+        return time;
     }
 }

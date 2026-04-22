@@ -7,8 +7,10 @@ public class StatsUI : MonoBehaviour
 
     private void UpdateStatsTextMesh()
     {
-        statsTextMesh.text = GameManager.Instance.GetScore() + "\n"
-            ;
+        statsTextMesh.text = GameManager.Instance.GetScore() + "\n" +
+            GameManager.Instance.GetTime() + "\n" +
+            Lander.Instance.GetSpeedX() + "\n" +
+            Lander.Instance.GetSpeedY();
 
     }
 }
