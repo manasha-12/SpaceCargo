@@ -1,9 +1,11 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class StatsUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI statsTextMesh;
+    [SerializeField] private Image fuelImage;
 
     private void Update()
     {
@@ -11,12 +13,12 @@ public class StatsUI : MonoBehaviour
     }
     private void UpdateStatsTextMesh()
     {
-        statsTextMesh.text = 
+        fuelImage.fillAmount = Lander.Instance.GetFuelAmountNormalized();
+        statsTextMesh.text =
             GameManager.Instance.GetScore() + "\n" +
             Mathf.Round(GameManager.Instance.GetTime()) + "\n" +
             Mathf.Round(Lander.Instance.GetSpeedX() * 10f) + "\n" +
-            Mathf.Round(Lander.Instance.GetSpeedY() * 10f) + "\n" +
-            Lander.Instance.GetFuel();
+            Mathf.Round(Lander.Instance.GetSpeedY() * 10f);
 
     }
 }
