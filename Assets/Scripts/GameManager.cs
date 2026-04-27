@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Cinemachine;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -6,6 +7,8 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    [SerializeField] private CinemachineCamera cinemachineCamera;
 
     private static int levelNumber = 1;
     [SerializeField] private List<GameLevel> gameLevelList;
@@ -36,6 +39,7 @@ public class GameManager : MonoBehaviour
             {
                 GameLevel spawnedGsmeLevel = Instantiate(level, Vector3.zero, Quaternion.identity);
                 Lander.Instance.transform.position = spawnedGsmeLevel.GetLanderPosition();
+                cinemachineCamera.Target.TrackingTarget = spawnedGsmeLevel.GetCameraStartTargetTransform();
             }
         }
     }
@@ -43,6 +47,11 @@ public class GameManager : MonoBehaviour
     private void Lander_OnStateChange(object sender, Lander.OnStateChangedEventAgrs e)
     {
         isTimerActive = e.state == Lander.State.Normal;
+
+        if (e.state == Lander.State.Normal)
+        {
+            cinemachineCamera.Target.TrackingTarget = Lander.Instance.transform;
+        }
     }
 
     private void Update()
