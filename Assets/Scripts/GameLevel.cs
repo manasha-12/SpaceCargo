@@ -4,6 +4,7 @@ public class GameLevel : MonoBehaviour
 {
     [SerializeField] private int levelNumber;
     [SerializeField] private Transform landerStartPositionTransform;
+    [SerializeField] private Transform cameraStartTargetTransform;
 
     public int GetLevelNumber()
     {
