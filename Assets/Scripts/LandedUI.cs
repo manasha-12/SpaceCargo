@@ -9,6 +9,7 @@ public class LandedUI : MonoBehaviour
     private void Start()
     {
         Lander.Instance.OnLanded += Lander_OnLanded;
+        Hide();
     }
 
     private void Lander_OnLanded(object sender, Lander.OnLandedEventArgs e)
@@ -27,5 +28,16 @@ public class LandedUI : MonoBehaviour
             "x" + e.scoreMultiplier + "\n" +
             e.score;
 
+        Show();
+    }
+
+    private void Show()
+    {
+        gameObject.SetActive(true);
+    }
+
+    private void Hide()
+    {
+        gameObject.SetActive(false);
     }
 }
