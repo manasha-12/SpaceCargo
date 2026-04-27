@@ -4,7 +4,7 @@ using UnityEngine;
 public class LandedUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI titleTextMesh;
-    [SerializeField] private TextMeshProUGUI statsTextMesh;\
+    [SerializeField] private TextMeshProUGUI statsTextMesh;
 
     private void Start()
     {
