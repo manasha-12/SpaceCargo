@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,11 +10,12 @@ public class LandedUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI statsTextMesh;
     [SerializeField] private Button nextButton;
 
+    private Action nextButtonClickAction;
     private void Awake()
     {
         nextButton.onClick.AddListener(() =>
         {
-            SceneManager.LoadScene(0);
+            nextButtonClickAction();
         });
     }
     private void Start()
@@ -27,6 +29,7 @@ public class LandedUI : MonoBehaviour
         if (e.landingType == Lander.LandingType.Success)
         {
             titleTextMesh.text = "WOW PERFECT LANDING!";
+            nextButtonClickAction = () => { };
         } else
         {
             titleTextMesh.text = "OOPS CRASHED!";
