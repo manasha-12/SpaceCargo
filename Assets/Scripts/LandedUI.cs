@@ -16,15 +16,15 @@ public class LandedUI : MonoBehaviour
     {
         if (e.landingType == Lander.LandingType.Success)
         {
-            titleTextMesh.text = "CONGRATS SUCCESSFUL LANDING!";
+            titleTextMesh.text = "WOW PERFECT LANDING!";
         } else
         {
             titleTextMesh.text = "OOPS CRASHED!";
         }
 
         statsTextMesh.text =
-            Mathf.Round(e.landingSpeed) + "\n" +
-            Mathf.Round(e.dotVector) + "\n" +
+            Mathf.Round(e.landingSpeed * 2f) + "\n" +
+            Mathf.Round(e.dotVector * 100f) + "\n" +
             "x" + e.scoreMultiplier + "\n" +
             e.score;
 
