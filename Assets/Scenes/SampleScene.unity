@@ -3472,6 +3472,7 @@ MonoBehaviour:
   leftThrusterParticleSystem: {fileID: 1767861644}
   rightThrusterParticleSystem: {fileID: 1936495368}
   middleThrusterParticleSystem: {fileID: 1449705274}
+  landerExplosionEffect: {fileID: 570857052369263401, guid: 6417a7f60d478884997c6c9ac491d28a, type: 3}
 --- !u!1 &1764539871
 GameObject:
   m_ObjectHideFlags: 0
