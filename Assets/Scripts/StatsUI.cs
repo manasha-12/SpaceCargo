@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class StatsUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI statsTextMesh;
+    [SerializeField] private TextMeshProUGUI levelTextMesh;
     [SerializeField] private Image fuelImage;
 
     private void Update()
@@ -19,6 +20,7 @@ public class StatsUI : MonoBehaviour
             Mathf.Round(GameManager.Instance.GetTime()) + "\n" +
             Mathf.Round(Lander.Instance.GetSpeedX() * 10f) + "\n" +
             Mathf.Round(Lander.Instance.GetSpeedY() * 10f);
+        levelTextMesh.text = GameManager.Instance.GetLevelNumber().ToString();
 
     }
 }

@@ -36,7 +36,7 @@ public class LandedUI : MonoBehaviour
         {
             titleTextMesh.text = "OOPS CRASHED!";
             nextButtonTextMesh.text = "FLY AGAIN";
-            nextButtonClickAction = GameManager.Instance.GoToNextLevel;
+            nextButtonClickAction = GameManager.Instance.RetryLevel;
         }
 
         statsTextMesh.text =

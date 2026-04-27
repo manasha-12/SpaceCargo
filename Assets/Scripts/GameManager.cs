@@ -85,6 +85,12 @@ public class GameManager : MonoBehaviour
 
     public void RetryLevel()
     {
+        levelNumber = 1;  // Reset to level 1
         SceneManager.LoadScene(0);
+    }
+
+    public int GetLevelNumber()
+    {
+        return levelNumber;
     }
 }
