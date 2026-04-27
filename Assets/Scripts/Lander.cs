@@ -7,6 +7,12 @@ public class Lander : MonoBehaviour
     private const float GRAVITY_NORAML = 0.7f;
     public static Lander Instance { get; private set; }
 
+    public event EventHandler<OnStateChangedEventAgrs> OnStateChange;
+    public class OnStateChangedEventAgrs : EventArgs
+    {
+        public State state;
+    }
+
     public event EventHandler OnUpForce;
     public event EventHandler OnRightForce;
     public event EventHandler OnLeftForce;
@@ -73,6 +79,10 @@ public class Lander : MonoBehaviour
                     {
                         landerRigidbody2D.gravityScale = GRAVITY_NORAML;
                         state = State.Normal;
+                    OnStateChange?.Invoke(this, new OnStateChangedEventAgrs
+                    {
+                        state = state,
+                    });
                     }
                     break;
             case State.Normal:
