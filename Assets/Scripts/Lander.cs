@@ -89,29 +89,29 @@ public class Lander : MonoBehaviour
                     return;
                 }
 
-                if (Keyboard.current.upArrowKey.isPressed ||
-                    Keyboard.current.leftArrowKey.isPressed ||
-                    Keyboard.current.rightArrowKey.isPressed)
+                if (GameInput.Instance.IsUpActionPressed() ||
+                    GameInput.Instance.IsLeftActionPressed() ||
+                    GameInput.Instance.IsRightActionPressed())
                 {
                     ConsumeFuel();
                     landerRigidbody2D.gravityScale = GRAVITY_NORAML;
                 }
 
-                if (Keyboard.current.upArrowKey.isPressed)
+                if (GameInput.Instance.IsUpActionPressed())
                 {
                     float force = 8f;
                     landerRigidbody2D.AddForce(force * transform.up, ForceMode2D.Force);
                     OnUpForce?.Invoke(this, EventArgs.Empty);
                 }
 
-                if (Keyboard.current.rightArrowKey.isPressed)
+                if (GameInput.Instance.IsRightActionPressed())
                 {
                     float turnspeed = -3f;
                     landerRigidbody2D.AddTorque(turnspeed, ForceMode2D.Force);
                     OnRightForce?.Invoke(this, EventArgs.Empty);
                 }
 
-                if (Keyboard.current.leftArrowKey.isPressed)
+                if (GameInput.Instance.IsLeftActionPressed())
                 {
                     float turnspeed = 3f;
                     landerRigidbody2D.AddTorque(turnspeed, ForceMode2D.Force);

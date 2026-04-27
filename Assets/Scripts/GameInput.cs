@@ -2,15 +2,37 @@ using UnityEngine;
 
 public class GameInput : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public static GameInput Instance { get; private set; }
+
+    private InputActions inputActions;
+
+    public void Awake()
     {
-        
+        Instance = this;
+        inputActions = new InputActions();
+        inputActions.Enable();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnDestroy()
     {
-        
+        inputActions.Disable();
+    }
+
+    public bool IsUpActionPressed()
+    {
+        return inputActions.Player.LanderUp.IsPressed();
+
+    }
+
+    public bool IsLeftActionPressed()
+    {
+        return inputActions.Player.LanderLeft.IsPressed();
+
+    }
+
+    public bool IsRightActionPressed()
+    {
+        return inputActions.Player.LanderRight.IsPressed();
+
     }
 }
