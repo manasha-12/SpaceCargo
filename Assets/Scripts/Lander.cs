@@ -19,10 +19,13 @@ public class Lander : MonoBehaviour
     }
 
     private Rigidbody2D landerRigidbody2D;
-    private float fuelAmount = 10f;
+    private float fuelAmount;
+    private float fuelAmountMax = 10f;
 
     private void Awake()
     {
+        fuelAmount = fuelAmountMax;
+
         landerRigidbody2D = GetComponent<Rigidbody2D>();
 
         Instance = this;
@@ -126,6 +129,11 @@ public class Lander : MonoBehaviour
             float addFuelAmount = fuelPickUp.GetFuelAmount();
             fuelAmount += addFuelAmount;
 
+            if (fuelAmount > fuelAmountMax)
+            {
+                fuelAmount = fuelAmountMax;
+            }
+
             Debug.Log("Fuel collected! Adding: " + addFuelAmount + " | New fuel total: " + fuelAmount);
 
             fuelPickUp.destroySelf();
@@ -158,5 +166,10 @@ public class Lander : MonoBehaviour
     public float GetSpeedY()
     {
         return landerRigidbody2D.linearVelocityY;
+    }
+
+    public float GetFuelAmountNormalized()
+    {
+        return fuelAmount / fuelAmountMax;
     }
 }
