@@ -8,6 +8,7 @@ public class LandedUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI titleTextMesh;
     [SerializeField] private TextMeshProUGUI statsTextMesh;
+    [SerializeField] private TextMeshProUGUI nextButtonTextMesh;
     [SerializeField] private Button nextButton;
 
     private Action nextButtonClickAction;
@@ -29,10 +30,13 @@ public class LandedUI : MonoBehaviour
         if (e.landingType == Lander.LandingType.Success)
         {
             titleTextMesh.text = "WOW PERFECT LANDING!";
-            nextButtonClickAction = () => { };
+            nextButtonTextMesh.text = "GO AHEAD";
+            nextButtonClickAction = GameManager.Instance.GoToNextLevel;
         } else
         {
             titleTextMesh.text = "OOPS CRASHED!";
+            nextButtonTextMesh.text = "FLY AGAIN";
+            nextButtonClickAction = GameManager.Instance.GoToNextLevel;
         }
 
         statsTextMesh.text =

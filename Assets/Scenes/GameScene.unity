@@ -175,6 +175,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   titleTextMesh: {fileID: 606961305}
   statsTextMesh: {fileID: 1185495731}
+  nextButtonTextMesh: {fileID: 1977045330}
   nextButton: {fileID: 1361377759}
 --- !u!1001 &64363903
 PrefabInstance:
