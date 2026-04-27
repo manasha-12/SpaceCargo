@@ -101,8 +101,8 @@ public class Lander : MonoBehaviour
                 landingType = LandingType.WrongLandingArea,
                 dotVector = 0f,
                 landingSpeed = 0f,
-                scoreMultiplier = landingPad.GetScoreMultiplier(),
-                score = 0f,
+                scoreMultiplier = 0,
+                score = 0,
             });
             return;
         }
@@ -118,7 +118,7 @@ public class Lander : MonoBehaviour
                 landingType = LandingType.TooFastLanding,
                 dotVector = 0f,
                 landingSpeed = relativeVelocityMagnitude,
-                scoreMultiplier = landingPad.GetScoreMultiplier(),
+                scoreMultiplier = 0,
                 score = 0,
             });
             return;
@@ -135,7 +135,7 @@ public class Lander : MonoBehaviour
                 landingType = LandingType.TooSteepAngle,
                 dotVector = dotVector,
                 landingSpeed = relativeVelocityMagnitude,
-                scoreMultiplier = landingPad.GetScoreMultiplier(),
+                scoreMultiplier = 0,
                 score = 0,
             });
             return;
