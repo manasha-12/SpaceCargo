@@ -14,6 +14,9 @@ public class GameManager : MonoBehaviour
     private static int levelNumber = 1;
     [SerializeField] private List<GameLevel> gameLevelList;
 
+    public event EventHandler OnGamePaused;
+    public event EventHandler OnGameUnPaused;
+
     private int score;
     private float time;
     private bool isTimerActive;
@@ -29,7 +32,14 @@ public class GameManager : MonoBehaviour
         Lander.Instance.OnLanded += Lander_OnLanded;
         Lander.Instance.OnStateChange += Lander_OnStateChange;
 
+        GameInput.Instance.OnMenuButtonPressed += GameInput_OnMenuButtonPressed;
+
         LoadCurrentLevel();
+    }
+
+    private void GameInput_OnMenuButtonPressed(object sender, EventArgs e)
+    {
+        PauseUnPauseGame();
     }
 
     private void LoadCurrentLevel()
@@ -109,11 +119,26 @@ public class GameManager : MonoBehaviour
     public void PauseGame()
     {
         Time.timeScale = 0f;
+        OnGamePaused?.Invoke(this, EventArgs.Empty);
     }
 
     public void UnPauseGame()
     {
         Time.timeScale = 1f;
+        OnGameUnPaused?.Invoke(this, EventArgs.Empty);
+
+    }
+
+    public void PauseUnPauseGame()
+    {
+        if (Time.timeScale == 1f)
+        {
+            PauseGame();
+
+        } else
+        {
+            UnPauseGame();
+        }
     }
 
 }
