@@ -4,4 +4,12 @@ using UnityEngine.UI;
 public class PausedUI : MonoBehaviour
 {
     [SerializeField] private Button resumeButton;
+
+    private void Awake()
+    {
+        resumeButton.onClick.AddListener(() =>
+        {
+            GameManager.Instance.UnPauseGame();
+        });
+    }
 }
