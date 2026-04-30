@@ -7,6 +7,8 @@ public class GameOverUI : MonoBehaviour
 {
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private TextMeshProUGUI scoreTextMesh;
+    [SerializeField] private TextMeshProUGUI highScoreTextMesh;
+
 
     private void Awake()
     {
@@ -18,6 +20,14 @@ public class GameOverUI : MonoBehaviour
 
     private void Start()
     {
-        scoreTextMesh.text = "FINAL SCORE:" + GameManager.Instance.GetTotalScore().ToString();
-    }
+        GameManager.Instance.CheckAndSaveHighScore();
+
+        int finalScore = GameManager.Instance.GetTotalScore();
+        int highScore = GameManager.Instance.GetHighScore();
+        bool isNewHighScore = GameManager.Instance.IsNewHighScore();
+
+        scoreTextMesh.text = "FINAL SCORE: " + finalScore.ToString();
+        highScoreTextMesh.text = "HIGH SCORE: " + highScore.ToString();
+
+}
 }

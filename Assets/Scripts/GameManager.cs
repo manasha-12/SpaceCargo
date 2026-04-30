@@ -12,6 +12,9 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private CinemachineCamera cinemachineCamera;
 
+    private int highScore;
+    private const string HIGH_SCORE_KEY = "HighScore";
+
     private static int levelNumber = 1;
     private static int totalScore;
     [SerializeField] private List<GameLevel> gameLevelList;
@@ -36,6 +39,9 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // Load high score
+        highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
+
         Lander.Instance.OnCoinPickup += Lander_OnCoinPickup;
         Lander.Instance.OnLanded += Lander_OnLanded;
         Lander.Instance.OnStateChange += Lander_OnStateChange;
@@ -170,6 +176,26 @@ public class GameManager : MonoBehaviour
         {
             UnPauseGame();
         }
+    }
+
+    public void CheckAndSaveHighScore()
+    {
+        if (totalScore > highScore)
+        {
+            highScore = totalScore;
+            PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
+            PlayerPrefs.Save();
+        }
+    }
+
+    public int GetHighScore()
+    {
+        return highScore;
+    }
+
+    public bool IsNewHighScore()
+    {
+        return totalScore > highScore;
     }
 
 }
