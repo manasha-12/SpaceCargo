@@ -9,9 +9,11 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+
     [SerializeField] private CinemachineCamera cinemachineCamera;
 
     private static int levelNumber = 1;
+    private static int totalScore;
     [SerializeField] private List<GameLevel> gameLevelList;
 
     public event EventHandler OnGamePaused;
@@ -99,9 +101,15 @@ public class GameManager : MonoBehaviour
         return time;
     }
 
+    public int GetTotalScore()
+    {
+        return totalScore;
+    }
+
     public void GoToNextLevel()
     {
         levelNumber++;
+        totalScore += score;
         SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 
