@@ -50,6 +50,8 @@ public class Lander : MonoBehaviour
 
     private State state=State.WaitingToStart;
 
+    private Coroutine slowFallCoroutine;
+
     private void Awake()
     {
         fuelAmount = fuelAmountMax;
@@ -261,5 +263,31 @@ public class Lander : MonoBehaviour
     public float GetFuelAmountNormalized()
     {
         return fuelAmount / fuelAmountMax;
+    }
+
+    public void ApplySlowFall(float duration, float reducedGravity)
+    {
+        // Stop existing slow fall if active
+        if (slowFallCoroutine != null)
+        {
+            StopCoroutine(slowFallCoroutine);
+        }
+
+        slowFallCoroutine = StartCoroutine(SlowFallCoroutine(duration, reducedGravity));
+    }
+
+    private System.Collections.IEnumerator SlowFallCoroutine(float duration, float reducedGravity)
+    {
+        float originalGravity = landerRigidbody2D.gravityScale;
+        landerRigidbody2D.gravityScale = reducedGravity;
+
+        Debug.Log("Slow Fall Active!");
+
+        yield return new WaitForSeconds(duration);
+
+        landerRigidbody2D.gravityScale = originalGravity;
+        Debug.Log("Slow Fall Ended!");
+
+        slowFallCoroutine = null;
     }
 }
