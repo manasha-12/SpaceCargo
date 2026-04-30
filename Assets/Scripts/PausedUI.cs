@@ -13,6 +13,11 @@ public class PausedUI : MonoBehaviour
         {
             GameManager.Instance.UnPauseGame();
         });
+
+        mainMenuButton.onClick.AddListener(() =>
+        {
+            SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+        });
     }
 
     private void Start()
