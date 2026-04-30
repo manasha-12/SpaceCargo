@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2061778209323494588}
   - component: {fileID: 6433385121401932634}
   - component: {fileID: 5465104127808838965}
+  - component: {fileID: 6817870899814705243}
   m_Layer: 0
   m_Name: CoinPickup
   m_TagString: Untagged
@@ -82,6 +83,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64f1d4d8d613acd40a5046287a6cb64c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6817870899814705243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281415456237022713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7549eae74ceee3c499c3d6843e918416, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotationSpeed: 100
+  glowSpeed: 2
+  glowMin: 0.5
+  glowMax: 1.5
 --- !u!1 &5799801519884067150
 GameObject:
   m_ObjectHideFlags: 0
