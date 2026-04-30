@@ -4,6 +4,7 @@ using UnityEngine.UI;
 public class MainMenuUI : MonoBehaviour
 {
     [SerializeField] private Button playButton;
+    [SerializeField] private Button selectLanderButton;
     [SerializeField] private Button quitButton;
 
     private void Awake()
@@ -14,6 +15,11 @@ public class MainMenuUI : MonoBehaviour
             GameManager.ResetStaticData();
             SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
         });
+
+        selectLanderButton.onClick.AddListener(() => {
+            SceneLoader.LoadScene(SceneLoader.Scene.LanderSelectionScene);
+        });
+
         quitButton.onClick.AddListener(() => {
             Application.Quit();
         });
