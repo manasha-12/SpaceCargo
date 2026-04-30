@@ -84,6 +84,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   collectionEffect: {fileID: 8975438721908411743, guid: 82511be07c0dd3d4e8a38aaafc171173, type: 3}
+  collectionSound: {fileID: 8300000, guid: 75e0ed05998b6df40997b3cef9ac320b, type: 3}
 --- !u!114 &6817870899814705243
 MonoBehaviour:
   m_ObjectHideFlags: 0
