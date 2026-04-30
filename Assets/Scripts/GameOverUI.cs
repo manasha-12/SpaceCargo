@@ -1,5 +1,4 @@
-using System.Runtime.CompilerServices;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +7,9 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private TextMeshProUGUI scoreTextMesh;
     [SerializeField] private TextMeshProUGUI highScoreTextMesh;
+    [SerializeField] private GameObject newHighScoreLabel;
 
+    [SerializeField] private LeaderboardUI leaderboardUI;
 
     private void Awake()
     {
@@ -20,14 +21,80 @@ public class GameOverUI : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log("GameOverUI: Start() called");
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("GameOverUI: GameManager.Instance is NULL!");
+
+            if (scoreTextMesh != null)
+                scoreTextMesh.text = "FINAL SCORE: 0";
+            if (highScoreTextMesh != null)
+                highScoreTextMesh.text = "HIGH SCORE: " + PlayerPrefs.GetInt("HighScore", 0);
+
+            if (leaderboardUI != null)
+            {
+                leaderboardUI.DisplayLeaderboard();
+            }
+            return;
+        }
+
+        Debug.Log("GameOverUI: GameManager found!");
+
         GameManager.Instance.CheckAndSaveHighScore();
 
         int finalScore = GameManager.Instance.GetTotalScore();
         int highScore = GameManager.Instance.GetHighScore();
         bool isNewHighScore = GameManager.Instance.IsNewHighScore();
 
-        scoreTextMesh.text = "FINAL SCORE: " + finalScore.ToString();
-        highScoreTextMesh.text = "HIGH SCORE: " + highScore.ToString();
+        Debug.Log($"GameOverUI: Final Score = {finalScore}, High Score = {highScore}");
 
-}
+        if (scoreTextMesh != null)
+        {
+            scoreTextMesh.text = "FINAL SCORE: " + finalScore.ToString();
+        }
+
+        if (highScoreTextMesh != null)
+        {
+            highScoreTextMesh.text = "HIGH SCORE: " + highScore.ToString();
+        }
+
+        if (newHighScoreLabel != null)
+        {
+            newHighScoreLabel.SetActive(isNewHighScore);
+        }
+
+        // Check LeaderboardManager
+        if (LeaderboardManager.Instance == null)
+        {
+            Debug.LogError("GameOverUI: LeaderboardManager.Instance is NULL!");
+
+            if (leaderboardUI != null)
+            {
+                leaderboardUI.DisplayLeaderboard();
+            }
+            return;
+        }
+
+        Debug.Log("GameOverUI: LeaderboardManager found!");
+
+        // Add score to leaderboard
+        string playerName = "PLR";
+
+        Debug.Log($"GameOverUI: About to add score - {playerName}: {finalScore}");
+
+        LeaderboardManager.Instance.AddScore(playerName, finalScore);
+
+        Debug.Log($"GameOverUI: Score added! Calling DisplayLeaderboard...");
+
+        // Display leaderboard
+        if (leaderboardUI != null)
+        {
+            leaderboardUI.DisplayLeaderboard(finalScore);
+        }
+        else
+        {
+            Debug.LogError("GameOverUI: leaderboardUI is NULL!");
+        }
+    }
 }
