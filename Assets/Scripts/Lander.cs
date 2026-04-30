@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,6 +13,18 @@ public class Lander : MonoBehaviour
         public State state;
     }
 
+    [Header("Health System")]
+    [SerializeField] private int maxHealth = 3;
+    private int currentHealth;
+
+    public event EventHandler<OnHealthChangedEventArgs> OnHealthChanged;
+    public class OnHealthChangedEventArgs : EventArgs
+    {
+        public int currentHealth;
+        public int maxHealth;
+        public int damage;
+    }
+
     public event EventHandler OnUpForce;
     public event EventHandler OnRightForce;
     public event EventHandler OnLeftForce;
@@ -21,6 +33,7 @@ public class Lander : MonoBehaviour
     public event EventHandler OnCoinPickup;
     public event EventHandler<OnLandedEventArgs> OnLanded;
     public class OnLandedEventArgs : EventArgs
+
     {
         public LandingType landingType;
         public int score;
@@ -44,6 +57,7 @@ public class Lander : MonoBehaviour
         GameOver,
     }
 
+
     private Rigidbody2D landerRigidbody2D;
     private float fuelAmount;
     private float fuelAmountMax = 10f;
@@ -55,6 +69,7 @@ public class Lander : MonoBehaviour
     private void Awake()
     {
         fuelAmount = fuelAmountMax;
+        currentHealth = maxHealth;
 
         landerRigidbody2D = GetComponent<Rigidbody2D>();
         landerRigidbody2D.gravityScale = 0f;
@@ -130,59 +145,175 @@ public class Lander : MonoBehaviour
         landerRigidbody2D.angularVelocity = Mathf.Clamp(landerRigidbody2D.angularVelocity, -200f, 200f);
     }
 
+    private bool isInvincible = false;
+
+    private System.Collections.IEnumerator InvincibilityFrames()
+    {
+        isInvincible = true;
+
+        // Flash the sprite
+        SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                spriteRenderer.enabled = false;
+                yield return new WaitForSeconds(0.1f);
+                spriteRenderer.enabled = true;
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        isInvincible = false;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+
+        if (currentHealth < 0)
+        {
+            currentHealth = 0;
+        }
+
+        // Notify UI of health change
+        OnHealthChanged?.Invoke(this, new OnHealthChangedEventArgs
+        {
+            currentHealth = currentHealth,
+            maxHealth = maxHealth,
+            damage = damage
+        });
+
+        Debug.Log($"Lander took {damage} damage! Health: {currentHealth}/{maxHealth}");
+    }
+
+    public int GetCurrentHealth()
+    {
+        return currentHealth;
+    }
+
+    public int GetMaxHealth()
+    {
+        return maxHealth;
+    }
+
+    public float GetHealthNormalized()
+    {
+        return (float)currentHealth / maxHealth;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision2D)
     {
+        // Skip collision if invincible
+        if (isInvincible) return;
+
         if (!collision2D.gameObject.TryGetComponent(out LandingPad landingPad))
         {
-            Debug.Log("The lander has crashed!");
-            OnLanded?.Invoke(this, new OnLandedEventArgs
+            // CRASH - Take damage
+            TakeDamage(1);
+
+            if (currentHealth <= 0)
             {
-                landingType = LandingType.WrongLandingArea,
-                dotVector = 0f,
-                landingSpeed = 0f,
-                scoreMultiplier = 0,
-                score = 0,
-            });
-            SetState(State.GameOver);
+                // FATAL CRASH - Health is 0, trigger game over
+                Debug.Log("The lander has been destroyed! (Health = 0)");
+
+                OnLanded?.Invoke(this, new OnLandedEventArgs
+                {
+                    landingType = LandingType.WrongLandingArea,
+                    dotVector = 0f,
+                    landingSpeed = 0f,
+                    scoreMultiplier = 0,
+                    score = 0,
+                });
+
+                SetState(State.GameOver);
+            }
+            else
+            {
+                // NON-FATAL CRASH - Survive, just bounce
+                Debug.Log($"Crash survived! Health remaining: {currentHealth}/{maxHealth}");
+
+                // ✅ DO NOT invoke OnLanded event!
+                // ✅ Just bounce and keep playing
+
+                Vector2 bounceDirection = (transform.position - collision2D.transform.position).normalized;
+                landerRigidbody2D.AddForce(bounceDirection * 5f, ForceMode2D.Impulse);
+
+                // Brief invincibility to prevent multiple hits
+                StartCoroutine(InvincibilityFrames());
+            }
             return;
         }
 
+        // Rest of landing pad collision code...
         float softLandingVelocityMagnitude = 4f;
         float relativeVelocityMagnitude = collision2D.relativeVelocity.magnitude;
 
         if (relativeVelocityMagnitude > softLandingVelocityMagnitude)
         {
-            Debug.Log("Landed too hard!");
-            OnLanded?.Invoke(this, new OnLandedEventArgs
+            // LANDING TOO FAST - Treat as crash
+            TakeDamage(1);
+
+            if (currentHealth <= 0)
             {
-                landingType = LandingType.TooFastLanding,
-                dotVector = 0f,
-                landingSpeed = relativeVelocityMagnitude,
-                scoreMultiplier = 0,
-                score = 0,
-            });
-            SetState(State.GameOver);
+                // Fatal
+                Debug.Log("Landed too hard - Destroyed!");
+                OnLanded?.Invoke(this, new OnLandedEventArgs
+                {
+                    landingType = LandingType.TooFastLanding,
+                    dotVector = 0f,
+                    landingSpeed = relativeVelocityMagnitude,
+                    scoreMultiplier = 0,
+                    score = 0,
+                });
+                SetState(State.GameOver);
+            }
+            else
+            {
+                // Non-fatal - just bounce
+                Debug.Log($"Landed too hard but survived! Health: {currentHealth}/{maxHealth}");
+                Vector2 bounceDirection = Vector2.up;
+                landerRigidbody2D.AddForce(bounceDirection * 3f, ForceMode2D.Impulse);
+                StartCoroutine(InvincibilityFrames());
+            }
             return;
         }
 
+        // Check landing angle
         float dotVector = Vector2.Dot(Vector2.up, transform.up);
         float minDotVector = .90f;
 
         if (dotVector < minDotVector)
         {
-            Debug.Log("Landed on a too steep angle");
-            OnLanded?.Invoke(this, new OnLandedEventArgs
+            // LANDING TOO STEEP - Treat as crash
+            TakeDamage(1);
+
+            if (currentHealth <= 0)
             {
-                landingType = LandingType.TooSteepAngle,
-                dotVector = dotVector,
-                landingSpeed = relativeVelocityMagnitude,
-                scoreMultiplier = 0,
-                score = 0,
-            });
-            SetState(State.GameOver);
+                // Fatal
+                Debug.Log("Landed at too steep angle - Destroyed!");
+                OnLanded?.Invoke(this, new OnLandedEventArgs
+                {
+                    landingType = LandingType.TooSteepAngle,
+                    dotVector = dotVector,
+                    landingSpeed = relativeVelocityMagnitude,
+                    scoreMultiplier = 0,
+                    score = 0,
+                });
+                SetState(State.GameOver);
+            }
+            else
+            {
+                // Non-fatal - just bounce
+                Debug.Log($"Landed at steep angle but survived! Health: {currentHealth}/{maxHealth}");
+                Vector2 bounceDirection = transform.up;
+                landerRigidbody2D.AddForce(bounceDirection * 3f, ForceMode2D.Impulse);
+                StartCoroutine(InvincibilityFrames());
+            }
             return;
         }
 
+        // SUCCESSFUL LANDING
         Debug.Log("Successful Landing!");
 
         float maxScoreAmountLandingAngle = 100;
@@ -192,11 +323,8 @@ public class Lander : MonoBehaviour
         float maxScoreAmountLandingSpeed = 100;
         float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude) * maxScoreAmountLandingSpeed;
 
-        //Debug.Log("landing angle score: " + landingAngleScore);
-        //Debug.Log("landing speed score: " + landingSpeedScore);
-
         int score = Mathf.RoundToInt((landingAngleScore + landingSpeedScore) * landingPad.GetScoreMultiplier());
-        //Debug.Log("Score:" + score);
+
         OnLanded?.Invoke(this, new OnLandedEventArgs
         {
             landingType = LandingType.Success,
@@ -205,7 +333,23 @@ public class Lander : MonoBehaviour
             scoreMultiplier = landingPad.GetScoreMultiplier(),
             score = score,
         });
+
         SetState(State.GameOver);
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+
+        // Notify UI of health reset
+        OnHealthChanged?.Invoke(this, new OnHealthChangedEventArgs
+        {
+            currentHealth = currentHealth,
+            maxHealth = maxHealth,
+            damage = 0
+        });
+
+        Debug.Log("Health reset to full: " + currentHealth + "/" + maxHealth);
     }
 
     private void OnTriggerEnter2D(Collider2D collider2D)

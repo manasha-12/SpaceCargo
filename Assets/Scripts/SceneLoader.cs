@@ -14,4 +14,18 @@ public static class SceneLoader
     {
         SceneManager.LoadScene(scene.ToString());
     }
+
+    public static void LoadScene(string sceneName)
+    {
+        // Use fade transition if available
+        if (SceneTransition.Instance != null)
+        {
+            SceneTransition.Instance.FadeToScene(sceneName);
+        }
+        else
+        {
+            // Fallback: Load scene directly
+            SceneManager.LoadScene(sceneName);
+        }
+    }
 }
