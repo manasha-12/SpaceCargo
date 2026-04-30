@@ -4,6 +4,8 @@ using UnityEngine.UI;
 public class PausedUI : MonoBehaviour
 {
     [SerializeField] private Button resumeButton;
+    [SerializeField] private Button mainMenuButton;
+
 
     private void Awake()
     {
