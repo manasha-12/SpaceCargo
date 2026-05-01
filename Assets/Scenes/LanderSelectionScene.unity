@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 59207015}
   - component: {fileID: 59207014}
   - component: {fileID: 59207013}
+  - component: {fileID: 59207016}
   m_Layer: 5
   m_Name: Lander3Button
   m_TagString: Untagged
@@ -242,6 +243,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 59207011}
   m_CullTransparentMesh: 1
+--- !u!114 &59207016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 59207011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffb81f92ada87b341a02ac5be87381bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowNormalOffset: {x: 4, y: -4}
+  shadowPressedOffset: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  normalOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedOutlineColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pressedOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 3
+  hoverScale: 1.07
+  pressedScale: 0.94
+  scaleSpeed: 12
+  hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  soundVolume: 0.7
 --- !u!1 &101926567
 GameObject:
   m_ObjectHideFlags: 0
@@ -437,6 +463,7 @@ GameObject:
   - component: {fileID: 145051659}
   - component: {fileID: 145051658}
   - component: {fileID: 145051657}
+  - component: {fileID: 145051660}
   m_Layer: 5
   m_Name: Lander2Button
   m_TagString: Untagged
@@ -548,6 +575,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145051655}
   m_CullTransparentMesh: 1
+--- !u!114 &145051660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145051655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffb81f92ada87b341a02ac5be87381bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowNormalOffset: {x: 4, y: -4}
+  shadowPressedOffset: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  normalOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedOutlineColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pressedOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 3
+  hoverScale: 1.07
+  pressedScale: 0.94
+  scaleSpeed: 12
+  hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  soundVolume: 0.7
 --- !u!1 &163377221
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +612,7 @@ GameObject:
   - component: {fileID: 163377225}
   - component: {fileID: 163377224}
   - component: {fileID: 163377223}
+  - component: {fileID: 163377226}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -669,6 +722,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 163377221}
   m_CullTransparentMesh: 1
+--- !u!114 &163377226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163377221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffb81f92ada87b341a02ac5be87381bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowNormalOffset: {x: 4, y: -4}
+  shadowPressedOffset: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  normalOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedOutlineColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pressedOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 3
+  hoverScale: 1.07
+  pressedScale: 0.94
+  scaleSpeed: 12
+  hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  soundVolume: 0.7
 --- !u!1 &306695767
 GameObject:
   m_ObjectHideFlags: 0
@@ -773,6 +851,7 @@ GameObject:
   - component: {fileID: 404649500}
   - component: {fileID: 404649499}
   - component: {fileID: 404649498}
+  - component: {fileID: 404649501}
   m_Layer: 5
   m_Name: BackButton
   m_TagString: Untagged
@@ -882,6 +961,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 404649496}
   m_CullTransparentMesh: 1
+--- !u!114 &404649501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404649496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffb81f92ada87b341a02ac5be87381bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowNormalOffset: {x: 4, y: -4}
+  shadowPressedOffset: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  normalOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedOutlineColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pressedOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 3
+  hoverScale: 1.07
+  pressedScale: 0.94
+  scaleSpeed: 12
+  hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  soundVolume: 0.7
 --- !u!1 &408637734
 GameObject:
   m_ObjectHideFlags: 0
@@ -2311,6 +2415,7 @@ GameObject:
   - component: {fileID: 1954331027}
   - component: {fileID: 1954331026}
   - component: {fileID: 1954331025}
+  - component: {fileID: 1954331028}
   m_Layer: 5
   m_Name: Lander1Button
   m_TagString: Untagged
@@ -2422,6 +2527,31 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1954331023}
   m_CullTransparentMesh: 1
+--- !u!114 &1954331028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1954331023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffb81f92ada87b341a02ac5be87381bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowNormalOffset: {x: 4, y: -4}
+  shadowPressedOffset: {x: 1, y: -1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  normalOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  selectedOutlineColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pressedOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 3
+  hoverScale: 1.07
+  pressedScale: 0.94
+  scaleSpeed: 12
+  hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  soundVolume: 0.7
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
