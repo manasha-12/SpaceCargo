@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -9,6 +11,8 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private CinemachineCamera cinemachineCamera;
+
+    [SerializeField] private InputActionAsset inputActionsAsset;
 
     private GameLevel currentLoadedLevel;
 
@@ -80,6 +84,20 @@ public class GameManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // Re-assign InputActions to the UI module after every scene load
+        var uiModule = FindFirstObjectByType<InputSystemUIInputModule>();
+        if (uiModule != null && inputActionsAsset != null)
+        {
+            uiModule.actionsAsset = inputActionsAsset;
+
+            uiModule.point = InputActionReference.Create(inputActionsAsset.FindAction("Player/Point"));
+            uiModule.leftClick = InputActionReference.Create(inputActionsAsset.FindAction("Player/LeftClick"));
+            uiModule.move = InputActionReference.Create(inputActionsAsset.FindAction("Player/Navigate"));
+            uiModule.submit = InputActionReference.Create(inputActionsAsset.FindAction("Player/Submit"));
+            uiModule.cancel = InputActionReference.Create(inputActionsAsset.FindAction("Player/Cancel"));
+            uiModule.scrollWheel = InputActionReference.Create(inputActionsAsset.FindAction("Player/ScrollWheel"));
+        }
+
         if (scene.name == "GameScene" && !hasLoadedLevel)
         {
             // Find camera reference again since it was lost

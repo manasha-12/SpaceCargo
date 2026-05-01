@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,11 +16,10 @@ public class GameInput : MonoBehaviour
         Instance = this;
 
         inputActions = new InputActions();
-        inputActions.Enable();
+        inputActions.Player.Enable();
 
         inputActions.Player.Menu.performed += Menu_performed;
 
-        // GET SHOOT ACTION FROM InputActions (not PlayerInputActions)
         shootAction = inputActions.Player.Shoot;
     }
 
@@ -52,5 +51,21 @@ public class GameInput : MonoBehaviour
     public bool IsShootPressed()
     {
         return shootAction.IsPressed();
+    }
+
+    // UI Navigation - these are now in Player map
+    public Vector2 GetNavigationInput()
+    {
+        return inputActions.Player.Navigate.ReadValue<Vector2>();
+    }
+
+    public bool IsSubmitPressed()
+    {
+        return inputActions.Player.Submit.triggered;
+    }
+
+    public bool IsCancelPressed()
+    {
+        return inputActions.Player.Cancel.triggered;
     }
 }

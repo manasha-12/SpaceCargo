@@ -1,6 +1,7 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -46,6 +47,9 @@ public class LandedUI : MonoBehaviour
             e.score;
 
         Show();
+
+        nextButton.Select();
+        EventSystem.current.SetSelectedGameObject(nextButton.gameObject);
     }
 
     private void Show()

@@ -1,6 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class LevelSelectionUI : MonoBehaviour
 {
@@ -20,10 +21,18 @@ public class LevelSelectionUI : MonoBehaviour
 
     private void Awake()
     {
-        backButton.onClick.AddListener(() =>
+        if (backButton != null)
         {
-            SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
-        });
+            backButton.onClick.AddListener(() =>
+            {
+                SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+            });
+
+            // Enable navigation on back button
+            Navigation nav = backButton.navigation;
+            nav.mode = Navigation.Mode.Automatic;
+            backButton.navigation = nav;
+        }
     }
 
     private void Start()
@@ -40,9 +49,17 @@ public class LevelSelectionUI : MonoBehaviour
 
         int maxUnlocked = LevelSelectionManager.GetMaxUnlockedLevel();
 
+        GameObject firstButton = null; // Track first button for selection
+
         for (int i = 1; i <= maxUnlocked; i++)
         {
-            CreateLevelButton(i, true);
+            GameObject buttonObj = CreateLevelButton(i, true);
+
+            // Remember first unlocked button
+            if (i == 1)
+            {
+                firstButton = buttonObj;
+            }
         }
 
         for (int i = 0; i < previewLockedCount; i++)
@@ -50,9 +67,28 @@ public class LevelSelectionUI : MonoBehaviour
             int lockedLevel = maxUnlocked + i + 1;
             CreateLevelButton(lockedLevel, false);
         }
+
+        // Select first button for controller navigation
+        if (firstButton != null)
+        {
+            StartCoroutine(SelectButtonAfterFrame(firstButton));
+        }
     }
 
-    private void CreateLevelButton(int levelNumber, bool isUnlocked)
+    // Select button after UI settles
+    private System.Collections.IEnumerator SelectButtonAfterFrame(GameObject buttonObj)
+    {
+        yield return null; // Wait one frame
+
+        Button button = buttonObj.GetComponent<Button>();
+        if (button != null && EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(buttonObj);
+            Debug.Log("Selected first level button for navigation");
+        }
+    }
+
+    private GameObject CreateLevelButton(int levelNumber, bool isUnlocked) // Return GameObject
     {
         GameObject buttonObj = Instantiate(levelButtonPrefab, levelButtonsContainer);
 
@@ -102,6 +138,8 @@ public class LevelSelectionUI : MonoBehaviour
         {
             SetupLockedButton(buttonObj, button, buttonImage, levelText, statusText, typeBadge, bestScoreText, starsContainer);
         }
+
+        return buttonObj; // Return the button object
     }
 
     private void SetupPreviewImage(Image previewImage, int levelNumber)
@@ -156,8 +194,30 @@ public class LevelSelectionUI : MonoBehaviour
         // Stars
         SetupStars(starsContainer, levelNumber);
 
-        // Make button clickable
-        button.interactable = true;
+        // Make button clickable and navigable
+        if (button != null)
+        {
+            button.interactable = true;
+
+            // Set navigation to Automatic
+            Navigation nav = button.navigation;
+            nav.mode = Navigation.Mode.Automatic;
+            button.navigation = nav;
+
+            // Setup button click
+            int level = levelNumber;
+            button.onClick.RemoveAllListeners(); // ✅ Clear existing listeners
+            button.onClick.AddListener(() => LoadLevel(level));
+
+            // Button color transitions (added selectedColor)
+            ColorBlock colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 1f, 0.9f);
+            colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
+            colors.selectedColor = new Color(1f, 1f, 0.8f); // For controller
+            colors.disabledColor = new Color(0.5f, 0.5f, 0.5f);
+            button.colors = colors;
+        }
 
         // Add hover effect
         LevelButtonHover hover = buttonObj.GetComponent<LevelButtonHover>();
@@ -165,18 +225,6 @@ public class LevelSelectionUI : MonoBehaviour
         {
             hover = buttonObj.AddComponent<LevelButtonHover>();
         }
-
-        // Setup button click
-        int level = levelNumber;
-        button.onClick.AddListener(() => LoadLevel(level));
-
-        // Button color transitions
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1f, 1f, 0.9f);
-        colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
-        colors.disabledColor = new Color(0.5f, 0.5f, 0.5f);
-        button.colors = colors;
     }
 
     private void SetupLockedButton(GameObject buttonObj, Button button, Image buttonImage,

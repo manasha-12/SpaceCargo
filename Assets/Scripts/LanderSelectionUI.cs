@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class LanderSelectionUI : MonoBehaviour
@@ -32,6 +33,17 @@ public class LanderSelectionUI : MonoBehaviour
     {
         // Show current selection
         UpdateSelectionVisual(LanderSelectionManager.Instance.GetSelectedLander());
+
+        StartCoroutine(SelectDefaultButton());
+    }
+
+    private System.Collections.IEnumerator SelectDefaultButton()
+    {
+        yield return null;
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(lander1Button.gameObject);
+        }
     }
 
     private void SelectLander(LanderSelectionManager.LanderType landerType)
