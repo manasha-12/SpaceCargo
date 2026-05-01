@@ -13,6 +13,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [SerializeField] private float levelWidth = 80f;
     [SerializeField] private float levelHeight = 50f;
 
+    private Vector2 randomLanderStartPosition;
+
     private int levelNumber;
 
     public void GenerateLevel(int levelNum)
@@ -23,6 +25,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
         int difficulty = (levelNumber - 4) / 3;
 
+        GenerateRandomLanderPosition();
+
         // Generate terrain first
         GenerateTerrain();
 
@@ -31,6 +35,8 @@ public class ProceduralLevelGenerator : MonoBehaviour
         GenerateCoins(difficulty);
         GenerateFuelPickups(difficulty);
         GenerateAsteroids(difficulty);
+
+        UpdateLanderPosition();
     }
 
     private void GenerateTerrain()
@@ -51,13 +57,23 @@ public class ProceduralLevelGenerator : MonoBehaviour
 
     private void GenerateLandingPads(int difficulty)
     {
-        int padCount = Random.Range(2, 5);
+        // ALWAYS place one landing pad directly below the lander's RANDOM starting position
+        Vector2 easyPadPosition = new Vector2(
+            randomLanderStartPosition.x,  // Same X as lander
+            randomLanderStartPosition.y - 10  // 10 units below lander
+        );
 
-        for (int i = 0; i < padCount; i++)
+        GameObject easyPad = Instantiate(landingPadPrefab, easyPadPosition, Quaternion.identity, transform);
+        Debug.Log($"Spawned EASY landing pad directly below lander at {easyPadPosition}");
+
+        // Then add 1-3 additional random landing pads for variety
+        int additionalPads = Random.Range(1, 4);
+
+        for (int i = 0; i < additionalPads; i++)
         {
             Vector2 position = GetRandomPosition();
             GameObject pad = Instantiate(landingPadPrefab, position, Quaternion.identity, transform);
-            Debug.Log($"Spawned landing pad at {position}");
+            Debug.Log($"Spawned additional landing pad at {position}");
         }
     }
 
@@ -111,5 +127,44 @@ public class ProceduralLevelGenerator : MonoBehaviour
         float y = Random.Range(-levelHeight / 2, levelHeight / 2);
 
         return new Vector2(x, y);
+    }
+
+    private void GenerateRandomLanderPosition()
+    {
+        // Random X position within level bounds
+        float randomX = Random.Range(-levelWidth / 3, levelWidth / 3); // Not too far to edges
+
+        // Fixed Y position near top (safe spawn area)
+        float spawnY = levelHeight / 2 - 10; // Near top of level
+
+        randomLanderStartPosition = new Vector2(randomX, spawnY);
+
+        Debug.Log($"Random lander start position: {randomLanderStartPosition}");
+    }
+
+    private void UpdateLanderPosition()
+    {
+        // Move the lander to the random position
+        if (Lander.Instance != null)
+        {
+            Lander.Instance.transform.position = randomLanderStartPosition;
+            Debug.Log($"Moved lander to: {randomLanderStartPosition}");
+        }
+
+        // Also update the GameLevel's lander position reference
+        GameLevel gameLevel = GetComponent<GameLevel>();
+        if (gameLevel != null)
+        {
+            // The GameLevel uses LanderStartPosition transform
+            // We need to move that transform too
+            Transform landerStart = gameLevel.GetLanderPosition() != Vector3.zero
+                ? transform.Find("LanderStartPosition")
+                : null;
+
+            if (landerStart != null)
+            {
+                landerStart.position = randomLanderStartPosition;
+            }
+        }
     }
 }
