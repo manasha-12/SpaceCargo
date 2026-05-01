@@ -611,6 +611,15 @@ public class GameManager : MonoBehaviour
 
     public void GoToNextLevel()
     {
+        // Calculate stars based on score (simple example)
+        int stars = 1;
+        if (score > 1000) stars = 2;
+        if (score > 3000) stars = 3;
+
+        // Save level completion data
+        LevelSelectionManager.SetLevelStars(levelNumber, stars);
+        LevelSelectionManager.SetLevelBestScore(levelNumber, score);
+
         levelNumber++;
         totalScore += score;
         score = 0;
