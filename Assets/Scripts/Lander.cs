@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,6 +25,13 @@ public class Lander : MonoBehaviour
         public int maxHealth;
         public int damage;
     }
+
+    [Header("Shooting System")]
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private Transform firePoint; // Where bullets spawn
+    [SerializeField] private float fireRate = 0.3f; // Time between shots
+
+    private float nextFireTime = 0f;
 
     public event EventHandler OnUpForce;
     public event EventHandler OnRightForce;
@@ -133,6 +141,11 @@ public class Lander : MonoBehaviour
                     float turnspeed = 3f;
                     landerRigidbody2D.AddTorque(turnspeed, ForceMode2D.Force);
                     OnLeftForce?.Invoke(this, EventArgs.Empty);
+                }
+
+                if (state == State.Normal)
+                {
+                    HandleShooting();
                 }
                 break;
             case State.GameOver:
@@ -250,8 +263,8 @@ public class Lander : MonoBehaviour
                 // NON-FATAL CRASH - Survive, just bounce
                 Debug.Log($"Crash survived! Health remaining: {currentHealth}/{maxHealth}");
 
-                // ✅ DO NOT invoke OnLanded event!
-                // ✅ Just bounce and keep playing
+                // DO NOT invoke OnLanded event!
+                // Just bounce and keep playing
 
                 Vector2 bounceDirection = (transform.position - collision2D.transform.position).normalized;
                 landerRigidbody2D.AddForce(bounceDirection * 5f, ForceMode2D.Impulse);
@@ -450,5 +463,38 @@ public class Lander : MonoBehaviour
         Debug.Log("Slow Fall Ended!");
 
         slowFallCoroutine = null;
+    }
+
+    private void HandleShooting()
+    {
+        // Use GameInput instead of Input.GetKey
+        if (GameInput.Instance.IsShootPressed() && Time.time >= nextFireTime)
+        {
+            ShootProjectile();
+            nextFireTime = Time.time + fireRate;
+        }
+    }
+
+    private void ShootProjectile()
+    {
+        if (bulletPrefab == null)
+        {
+            Debug.LogWarning("Bullet prefab not assigned!");
+            return;
+        }
+
+        // Determine spawn position
+        Vector3 spawnPosition = firePoint != null ? firePoint.position : transform.position;
+
+        // Spawn bullet facing the same direction as the lander
+        GameObject bullet = Instantiate(bulletPrefab, spawnPosition, transform.rotation);
+
+        ParticleSystem muzzleFlash = firePoint?.GetComponentInChildren<ParticleSystem>();
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Play();
+        }
+
+        Debug.Log("Bullet fired!");
     }
 }

@@ -115,4 +115,10 @@ public class Drone : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, stopDistance);
     }
+
+    public void TakeDamage(int damage)
+    {
+        Debug.Log("Drone destroyed by projectile!");
+        DestroyDrone();
+    }
 }
