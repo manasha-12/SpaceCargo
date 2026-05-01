@@ -10,6 +10,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
     [SerializeField] private GameObject asteroidPrefab;
     [SerializeField] private GameObject windZonePrefab;
     [SerializeField] private GameObject slowFallPowerUpPrefab;
+    [SerializeField] private GameObject dronePrefab;
 
     [Header("Level Size")]
     [SerializeField] private float levelWidth = 80f;
@@ -40,6 +41,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
         GenerateAsteroids(difficulty);
         GenerateWindZones(difficulty);
         GenerateSlowFallPowerUps(difficulty);
+        GenerateDrones(difficulty);
 
         // Update lander's actual position
         UpdateLanderPosition();
@@ -211,5 +213,43 @@ public class ProceduralLevelGenerator : MonoBehaviour
     private Vector2 GetRandomPosition()
     {
         return GetRandomPositionAboveTerrain();
+    }
+
+    private void GenerateDrones(int difficulty)
+    {
+        if (dronePrefab == null)
+        {
+            Debug.LogWarning("Drone prefab not assigned!");
+            return;
+        }
+
+        // Spawn more drones as difficulty increases
+        int droneCount = 1 + difficulty; // Level 4 = 1 drone, Level 7 = 2 drones, etc.
+        droneCount = Mathf.Min(droneCount, 5); // Cap at 5 drones max
+
+        for (int i = 0; i < droneCount; i++)
+        {
+            Vector2 position = GetRandomPositionAboveTerrain();
+
+            // Make sure drone doesn't spawn too close to lander
+            while (Vector2.Distance(position, randomLanderStartPosition) < 10f)
+            {
+                position = GetRandomPositionAboveTerrain();
+            }
+
+            GameObject drone = Instantiate(dronePrefab, position, Quaternion.identity, transform);
+
+            // Optional: Make drones faster on higher levels
+            Drone droneScript = drone.GetComponent<Drone>();
+            if (droneScript != null)
+            {
+                // Increase speed based on difficulty
+                // You can adjust this in the inspector per-drone if you want
+            }
+
+            Debug.Log($"Spawned drone at {position}");
+        }
+
+        Debug.Log($"Spawned {droneCount} drones for difficulty {difficulty}");
     }
 }
