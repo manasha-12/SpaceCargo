@@ -68,8 +68,11 @@ MonoBehaviour:
   coinPrefab: {fileID: 1281415456237022713, guid: 88f3a09c27e02854ab5c1a08a8b0ed63, type: 3}
   fuelPickupPrefab: {fileID: 8511298334186972619, guid: 53d1a083905956a46b2bea0387334eed, type: 3}
   asteroidPrefab: {fileID: 8485278029361172523, guid: f0e14431ca6cbe04093780aae0d4efef, type: 3}
+  windZonePrefab: {fileID: 7592307159508258364, guid: 6d337c7591b5dc94f8d8e2f866d39db4, type: 3}
+  slowFallPowerUpPrefab: {fileID: 471392999997234279, guid: ad5476ad76f955b4594ca935bab87936, type: 3}
   levelWidth: 80
   levelHeight: 50
+  terrainHeight: -25
 --- !u!1 &1701733190557857457
 GameObject:
   m_ObjectHideFlags: 0

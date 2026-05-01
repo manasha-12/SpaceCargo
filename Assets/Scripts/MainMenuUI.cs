@@ -13,7 +13,7 @@ public class MainMenuUI : MonoBehaviour
 
         playButton.onClick.AddListener(() => {
             GameManager.ResetStaticData();
-            SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+            SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
         });
 
         selectLanderButton.onClick.AddListener(() => {

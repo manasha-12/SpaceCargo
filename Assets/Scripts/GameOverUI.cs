@@ -63,38 +63,5 @@ public class GameOverUI : MonoBehaviour
         {
             newHighScoreLabel.SetActive(isNewHighScore);
         }
-
-        // Check LeaderboardManager
-        if (LeaderboardManager.Instance == null)
-        {
-            Debug.LogError("GameOverUI: LeaderboardManager.Instance is NULL!");
-
-            if (leaderboardUI != null)
-            {
-                leaderboardUI.DisplayLeaderboard();
-            }
-            return;
-        }
-
-        Debug.Log("GameOverUI: LeaderboardManager found!");
-
-        // Add score to leaderboard
-        string playerName = "PLR";
-
-        Debug.Log($"GameOverUI: About to add score - {playerName}: {finalScore}");
-
-        LeaderboardManager.Instance.AddScore(playerName, finalScore);
-
-        Debug.Log($"GameOverUI: Score added! Calling DisplayLeaderboard...");
-
-        // Display leaderboard
-        if (leaderboardUI != null)
-        {
-            leaderboardUI.DisplayLeaderboard(finalScore);
-        }
-        else
-        {
-            Debug.LogError("GameOverUI: leaderboardUI is NULL!");
-        }
     }
 }

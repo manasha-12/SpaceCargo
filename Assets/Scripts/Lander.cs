@@ -102,7 +102,7 @@ public class Lander : MonoBehaviour
             case State.Normal:
                 if (fuelAmount <= 0f)
                 {
-                    Debug.Log("Out of fuel!");
+                    OutOfFuel();
                     return;
                 }
 
@@ -143,6 +143,23 @@ public class Lander : MonoBehaviour
 
         // Limit angular velocity for smoother rotation
         landerRigidbody2D.angularVelocity = Mathf.Clamp(landerRigidbody2D.angularVelocity, -200f, 200f);
+    }
+
+    private void OutOfFuel()
+    {
+        Debug.Log("Out of fuel! Game Over!");
+
+        // Take all remaining health to trigger full game over
+        if (currentHealth > 0)
+        {
+            TakeDamage(currentHealth);
+        }
+
+        // Set state to game over
+        SetState(State.GameOver);
+
+        // Load the final GameOverScene directly
+        SceneLoader.LoadScene(SceneLoader.Scene.GameOverScene);
     }
 
     private bool isInvincible = false;

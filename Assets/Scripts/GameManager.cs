@@ -395,6 +395,14 @@ public class GameManager : MonoBehaviour
             highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
         }
 
+        // Check if starting from a specific level (from Level Selection)
+        if (PlayerPrefs.HasKey("StartLevel"))
+        {
+            levelNumber = PlayerPrefs.GetInt("StartLevel");
+            PlayerPrefs.DeleteKey("StartLevel"); // Clear after reading
+            totalScore = 0; // Reset score when starting from level select
+        }
+
         if (SceneManager.GetActiveScene().name == "GameScene")
         {
             SubscribeToEvents();
@@ -608,6 +616,8 @@ public class GameManager : MonoBehaviour
         score = 0;
         time = 0;
         hasLoadedLevel = false;
+
+        LevelSelectionManager.UnlockLevel(levelNumber);
 
         if (currentLoadedLevel != null)
         {
