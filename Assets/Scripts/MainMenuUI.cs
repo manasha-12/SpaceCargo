@@ -37,6 +37,7 @@ public class MainMenuUI : MonoBehaviour
             Application.Quit();
         });
 
+        // Fixed: proper lambda syntax, no broken URL
         if (leadersButton != null && leaderboardUI != null)
             leadersButton.onClick.AddListener(() => leaderboardUI.Show());
     }
