@@ -68,4 +68,14 @@ public class GameInput : MonoBehaviour
     {
         return inputActions.Player.Cancel.triggered;
     }
+
+    public void DisableSubmitAction()
+    {
+        inputActions.Player.Submit.Disable();
+    }
+
+    public void EnableSubmitAction()
+    {
+        inputActions.Player.Submit.Enable();
+    }
 }

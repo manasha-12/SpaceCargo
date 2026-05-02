@@ -1,3 +1,4 @@
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -11,26 +12,18 @@ public class PausedUI : MonoBehaviour
 
     private void Awake()
     {
-        // Get or add CanvasGroup
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
-        {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
-            Debug.Log("PausedUI: Added CanvasGroup component");
-        }
 
-        // IMPORTANT: Don't disable GameObject, just hide visually
         HideImmediate();
 
-        // Setup button listeners
         if (resumeButton != null)
         {
             resumeButton.onClick.AddListener(() =>
             {
                 if (GameManager.Instance != null)
-                {
                     GameManager.Instance.UnPauseGame();
-                }
             });
         }
 
@@ -38,39 +31,39 @@ public class PausedUI : MonoBehaviour
         {
             mainMenuButton.onClick.AddListener(() =>
             {
+                // Deselect and disable submit BEFORE loading scene
+                if (EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(null);
+
+                if (GameInput.Instance != null)
+                    GameInput.Instance.DisableSubmitAction();
+
                 Time.timeScale = 1f;
-                SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+
+                StartCoroutine(LoadMainMenuAfterDelay());
             });
         }
+    }
 
-        Debug.Log("PausedUI: Awake completed");
+    private IEnumerator LoadMainMenuAfterDelay()
+    {
+        // Time-based delay so Cross release is registered before new scene loads
+        yield return new WaitForSecondsRealtime(0.3f);
+        SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
     }
 
     private void Start()
     {
-        Debug.Log("PausedUI: Start() called");
+        if (GameManager.Instance == null) return;
 
-        if (GameManager.Instance == null)
-        {
-            Debug.LogWarning("PausedUI: GameManager not found!");
-            return;
-        }
-
-        // Unsubscribe first to prevent duplicates
         GameManager.Instance.OnGamePaused -= GameManager_OnGamePaused;
         GameManager.Instance.OnGameUnPaused -= GameManager_OnGameUnPaused;
-
-        // Subscribe to events
         GameManager.Instance.OnGamePaused += GameManager_OnGamePaused;
         GameManager.Instance.OnGameUnPaused += GameManager_OnGameUnPaused;
-
-        Debug.Log("PausedUI: Successfully subscribed to GameManager events");
     }
 
     private void OnDestroy()
     {
-        Debug.Log("PausedUI: OnDestroy() called");
-
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGamePaused -= GameManager_OnGamePaused;
@@ -78,22 +71,11 @@ public class PausedUI : MonoBehaviour
         }
     }
 
-    private void GameManager_OnGamePaused(object sender, System.EventArgs e)
-    {
-        Debug.Log("PausedUI: *** PAUSE EVENT RECEIVED ***");
-        Show();
-    }
-
-    private void GameManager_OnGameUnPaused(object sender, System.EventArgs e)
-    {
-        Debug.Log("PausedUI: *** UNPAUSE EVENT RECEIVED ***");
-        Hide();
-    }
+    private void GameManager_OnGamePaused(object sender, System.EventArgs e) => Show();
+    private void GameManager_OnGameUnPaused(object sender, System.EventArgs e) => Hide();
 
     private void Show()
     {
-        Debug.Log("PausedUI: Show() - Making UI visible");
-
         if (canvasGroup != null)
         {
             canvasGroup.alpha = 1f;
@@ -101,19 +83,18 @@ public class PausedUI : MonoBehaviour
             canvasGroup.blocksRaycasts = true;
         }
 
-        // Select resume button for keyboard navigation
-        if (resumeButton != null)
-        {
-            resumeButton.Select();
-        }
+        StartCoroutine(SelectResumeAfterDelay());
+    }
 
-        Debug.Log($"PausedUI: Canvas Group Alpha = {canvasGroup?.alpha}");
+    private IEnumerator SelectResumeAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.1f);
+        if (resumeButton != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(resumeButton.gameObject);
     }
 
     private void Hide()
     {
-        Debug.Log("PausedUI: Hide() - Making UI invisible");
-
         if (canvasGroup != null)
         {
             canvasGroup.alpha = 0f;
@@ -121,16 +102,12 @@ public class PausedUI : MonoBehaviour
             canvasGroup.blocksRaycasts = false;
         }
 
-        // Deselect all UI
         if (EventSystem.current != null)
-        {
             EventSystem.current.SetSelectedGameObject(null);
-        }
     }
 
     private void HideImmediate()
     {
-        // Hide without logging (called in Awake)
         if (canvasGroup != null)
         {
             canvasGroup.alpha = 0f;

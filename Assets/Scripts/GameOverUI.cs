@@ -8,7 +8,6 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI scoreTextMesh;
     [SerializeField] private TextMeshProUGUI highScoreTextMesh;
     [SerializeField] private GameObject newHighScoreLabel;
-
     [SerializeField] private LeaderboardUI leaderboardUI;
 
     private void Awake()
@@ -32,11 +31,11 @@ public class GameOverUI : MonoBehaviour
             if (highScoreTextMesh != null)
                 highScoreTextMesh.text = "HIGH SCORE: " + PlayerPrefs.GetInt("HighScore", 0);
 
+            // Still show leaderboard even without GameManager
             if (leaderboardUI != null)
-            {
                 leaderboardUI.DisplayLeaderboard();
-            }
-            return;
+
+            return; 
         }
 
         Debug.Log("GameOverUI: GameManager found!");
@@ -44,24 +43,29 @@ public class GameOverUI : MonoBehaviour
         GameManager.Instance.CheckAndSaveHighScore();
 
         int finalScore = GameManager.Instance.GetTotalScore();
+
+        // Submit to leaderboard
+        if (LeaderboardManager.Instance != null && !string.IsNullOrEmpty(LeaderboardManager.CurrentPlayerName))
+        {
+            LeaderboardManager.Instance.SubmitScore(LeaderboardManager.CurrentPlayerName, finalScore);
+        }
+
         int highScore = GameManager.Instance.GetHighScore();
         bool isNewHighScore = GameManager.Instance.IsNewHighScore();
 
         Debug.Log($"GameOverUI: Final Score = {finalScore}, High Score = {highScore}");
 
         if (scoreTextMesh != null)
-        {
             scoreTextMesh.text = "FINAL SCORE: " + finalScore.ToString();
-        }
 
         if (highScoreTextMesh != null)
-        {
             highScoreTextMesh.text = "HIGH SCORE: " + highScore.ToString();
-        }
 
         if (newHighScoreLabel != null)
-        {
             newHighScoreLabel.SetActive(isNewHighScore);
-        }
+
+        // Show leaderboard automatically in game over
+        if (leaderboardUI != null)
+            leaderboardUI.DisplayLeaderboard();
     }
 }

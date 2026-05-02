@@ -411,6 +411,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""Right"",
+                    ""id"": ""c2350ba2-a5ac-4002-ba38-3550fbb14eaa"",
+                    ""path"": ""<DualShockGamepad>/rightStick/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""Navigate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": ""2D Vector"",
                     ""id"": ""69494f51-cc3e-4237-8d8c-6e8736185c00"",
                     ""path"": ""2DVector"",

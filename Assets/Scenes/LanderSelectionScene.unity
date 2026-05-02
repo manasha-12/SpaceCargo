@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 59207014}
   - component: {fileID: 59207013}
   - component: {fileID: 59207016}
+  - component: {fileID: 59207017}
   m_Layer: 5
   m_Name: Lander3Button
   m_TagString: Untagged
@@ -268,6 +269,19 @@ MonoBehaviour:
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
   clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
+--- !u!114 &59207017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 59207011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63380f0cb9fdc0d47a0593a09a28e5d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  landerType: 2
 --- !u!1 &101926567
 GameObject:
   m_ObjectHideFlags: 0
@@ -464,6 +478,7 @@ GameObject:
   - component: {fileID: 145051658}
   - component: {fileID: 145051657}
   - component: {fileID: 145051660}
+  - component: {fileID: 145051661}
   m_Layer: 5
   m_Name: Lander2Button
   m_TagString: Untagged
@@ -600,6 +615,19 @@ MonoBehaviour:
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
   clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
+--- !u!114 &145051661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 145051655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63380f0cb9fdc0d47a0593a09a28e5d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  landerType: 1
 --- !u!1 &163377221
 GameObject:
   m_ObjectHideFlags: 0
@@ -984,7 +1012,7 @@ MonoBehaviour:
   pressedScale: 0.94
   scaleSpeed: 12
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
-  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
 --- !u!1 &408637734
 GameObject:
@@ -2416,6 +2444,7 @@ GameObject:
   - component: {fileID: 1954331026}
   - component: {fileID: 1954331025}
   - component: {fileID: 1954331028}
+  - component: {fileID: 1954331029}
   m_Layer: 5
   m_Name: Lander1Button
   m_TagString: Untagged
@@ -2551,7 +2580,20 @@ MonoBehaviour:
   scaleSpeed: 12
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
   clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
-  soundVolume: 0.7
+  soundVolume: 1
+--- !u!114 &1954331029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1954331023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63380f0cb9fdc0d47a0593a09a28e5d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  landerType: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

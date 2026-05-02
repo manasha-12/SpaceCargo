@@ -411,7 +411,7 @@ MonoBehaviour:
   pressedScale: 0.94
   scaleSpeed: 12
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
-  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
 --- !u!1 &247782114
 GameObject:

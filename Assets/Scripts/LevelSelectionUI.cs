@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Collections;
 
 public class LevelSelectionUI : MonoBehaviour
 {
@@ -15,9 +16,11 @@ public class LevelSelectionUI : MonoBehaviour
     [SerializeField] private int previewLockedCount = 3;
 
     [Header("Colors")]
-    [SerializeField] private Color handMadeColor = new Color(0.18f, 0.8f, 0.44f, 1f); // Emerald green
-    [SerializeField] private Color proceduralColor = new Color(0.2f, 0.6f, 0.86f, 1f); // Blue
-    [SerializeField] private Color lockedColor = new Color(0.2f, 0.29f, 0.37f, 1f); // Dark gray
+    [SerializeField] private Color handMadeColor = new Color(0.18f, 0.8f, 0.44f, 1f);
+    [SerializeField] private Color proceduralColor = new Color(0.2f, 0.6f, 0.86f, 1f);
+    [SerializeField] private Color lockedColor = new Color(0.2f, 0.29f, 0.37f, 1f);
+
+    private bool isTransitioning = false;
 
     private void Awake()
     {
@@ -25,18 +28,42 @@ public class LevelSelectionUI : MonoBehaviour
         {
             backButton.onClick.AddListener(() =>
             {
-                SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+                if (isTransitioning) return;
+                isTransitioning = true;
+
+                if (EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(null);
+
+                // Disable submit immediately so input doesn't bleed
+                if (GameInput.Instance != null)
+                    GameInput.Instance.DisableSubmitAction();
+
+                StartCoroutine(LoadMainMenuAfterDelay());
             });
 
-            // Enable navigation on back button
             Navigation nav = backButton.navigation;
             nav.mode = Navigation.Mode.Automatic;
             backButton.navigation = nav;
         }
     }
 
+    private IEnumerator LoadMainMenuAfterDelay()
+    {
+        // Time-based — reliable in builds
+        yield return new WaitForSecondsRealtime(0.3f);
+        SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+    }
+
     private void Start()
     {
+        // Clear any held input immediately
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        // Disable submit so held Cross from previous scene doesn't fire
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         GenerateLevelButtons();
     }
 
@@ -48,18 +75,12 @@ public class LevelSelectionUI : MonoBehaviour
         }
 
         int maxUnlocked = LevelSelectionManager.GetMaxUnlockedLevel();
-
-        GameObject firstButton = null; // Track first button for selection
+        GameObject firstButton = null;
 
         for (int i = 1; i <= maxUnlocked; i++)
         {
             GameObject buttonObj = CreateLevelButton(i, true);
-
-            // Remember first unlocked button
-            if (i == 1)
-            {
-                firstButton = buttonObj;
-            }
+            if (i == 1) firstButton = buttonObj;
         }
 
         for (int i = 0; i < previewLockedCount; i++)
@@ -68,31 +89,32 @@ public class LevelSelectionUI : MonoBehaviour
             CreateLevelButton(lockedLevel, false);
         }
 
-        // Select first button for controller navigation
         if (firstButton != null)
         {
-            StartCoroutine(SelectButtonAfterFrame(firstButton));
+            StartCoroutine(SelectButtonAfterDelay(firstButton));
         }
     }
 
-    // Select button after UI settles
-    private System.Collections.IEnumerator SelectButtonAfterFrame(GameObject buttonObj)
+    private IEnumerator SelectButtonAfterDelay(GameObject buttonObj)
     {
-        yield return null; // Wait one frame
+        // Time-based delay — reliable in builds
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        // Re-enable submit now that input state has cleared
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
 
         Button button = buttonObj.GetComponent<Button>();
         if (button != null && EventSystem.current != null)
         {
             EventSystem.current.SetSelectedGameObject(buttonObj);
-            Debug.Log("Selected first level button for navigation");
         }
     }
 
-    private GameObject CreateLevelButton(int levelNumber, bool isUnlocked) // Return GameObject
+    private GameObject CreateLevelButton(int levelNumber, bool isUnlocked)
     {
         GameObject buttonObj = Instantiate(levelButtonPrefab, levelButtonsContainer);
 
-        // Find all components
         Button button = buttonObj.GetComponent<Button>();
         Image buttonImage = buttonObj.GetComponent<Image>();
 
@@ -104,10 +126,8 @@ public class LevelSelectionUI : MonoBehaviour
         Image previewImage = buttonObj.transform.Find("PreviewImage")?.GetComponent<Image>();
         Transform starsContainer = buttonObj.transform.Find("StarsContainer");
 
-        // Setup preview image
         SetupPreviewImage(previewImage, levelNumber);
 
-        // Set level text
         if (levelText != null)
         {
             levelText.text = $"LEVEL {levelNumber}";
@@ -115,31 +135,26 @@ public class LevelSelectionUI : MonoBehaviour
             levelText.fontStyle = FontStyles.Bold;
         }
 
-        // Set type badge
         if (typeBadge != null)
         {
             if (levelNumber <= totalHandMadeLevels)
             {
                 typeBadge.text = "Hand-Made";
-                typeBadge.color = new Color(1f, 0.8f, 0.2f); // Gold
+                typeBadge.color = new Color(1f, 0.8f, 0.2f);
             }
             else
             {
                 typeBadge.text = "Procedural";
-                typeBadge.color = new Color(0.5f, 0.8f, 1f); // Light blue
+                typeBadge.color = new Color(0.5f, 0.8f, 1f);
             }
         }
 
         if (isUnlocked)
-        {
             SetupUnlockedButton(buttonObj, button, buttonImage, statusText, bestScoreText, starsContainer, levelNumber);
-        }
         else
-        {
             SetupLockedButton(buttonObj, button, buttonImage, levelText, statusText, typeBadge, bestScoreText, starsContainer);
-        }
 
-        return buttonObj; // Return the button object
+        return buttonObj;
     }
 
     private void SetupPreviewImage(Image previewImage, int levelNumber)
@@ -161,13 +176,9 @@ public class LevelSelectionUI : MonoBehaviour
     private void SetupUnlockedButton(GameObject buttonObj, Button button, Image buttonImage,
         TextMeshProUGUI statusText, TextMeshProUGUI bestScoreText, Transform starsContainer, int levelNumber)
     {
-        // Set button color based on type
         if (buttonImage != null)
-        {
             buttonImage.color = (levelNumber <= totalHandMadeLevels) ? handMadeColor : proceduralColor;
-        }
 
-        // Status text
         if (statusText != null)
         {
             statusText.text = "▶ PLAY";
@@ -176,7 +187,6 @@ public class LevelSelectionUI : MonoBehaviour
             statusText.fontStyle = FontStyles.Bold;
         }
 
-        // Best score
         if (bestScoreText != null)
         {
             int bestScore = LevelSelectionManager.GetLevelBestScore(levelNumber);
@@ -191,56 +201,40 @@ public class LevelSelectionUI : MonoBehaviour
             }
         }
 
-        // Stars
         SetupStars(starsContainer, levelNumber);
 
-        // Make button clickable and navigable
         if (button != null)
         {
             button.interactable = true;
 
-            // Set navigation to Automatic
             Navigation nav = button.navigation;
             nav.mode = Navigation.Mode.Automatic;
             button.navigation = nav;
 
-            // Setup button click
             int level = levelNumber;
-            button.onClick.RemoveAllListeners(); // ✅ Clear existing listeners
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => LoadLevel(level));
 
-            // Button color transitions (added selectedColor)
             ColorBlock colors = button.colors;
             colors.normalColor = Color.white;
             colors.highlightedColor = new Color(1f, 1f, 0.9f);
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
-            colors.selectedColor = new Color(1f, 1f, 0.8f); // For controller
+            colors.selectedColor = new Color(1f, 1f, 0.8f);
             colors.disabledColor = new Color(0.5f, 0.5f, 0.5f);
             button.colors = colors;
         }
 
-        // Add hover effect
         LevelButtonHover hover = buttonObj.GetComponent<LevelButtonHover>();
         if (hover == null)
-        {
             hover = buttonObj.AddComponent<LevelButtonHover>();
-        }
     }
 
     private void SetupLockedButton(GameObject buttonObj, Button button, Image buttonImage,
         TextMeshProUGUI levelText, TextMeshProUGUI statusText, TextMeshProUGUI typeBadge,
         TextMeshProUGUI bestScoreText, Transform starsContainer)
     {
-        // Locked appearance
-        if (buttonImage != null)
-        {
-            buttonImage.color = lockedColor;
-        }
-
-        if (levelText != null)
-        {
-            levelText.color = new Color(0.6f, 0.6f, 0.6f);
-        }
+        if (buttonImage != null) buttonImage.color = lockedColor;
+        if (levelText != null) levelText.color = new Color(0.6f, 0.6f, 0.6f);
 
         if (statusText != null)
         {
@@ -249,21 +243,9 @@ public class LevelSelectionUI : MonoBehaviour
             statusText.fontSize = 20;
         }
 
-        if (typeBadge != null)
-        {
-            typeBadge.color = new Color(0.4f, 0.4f, 0.4f);
-        }
-
-        if (bestScoreText != null)
-        {
-            bestScoreText.gameObject.SetActive(false);
-        }
-
-        // Hide stars
-        if (starsContainer != null)
-        {
-            starsContainer.gameObject.SetActive(false);
-        }
+        if (typeBadge != null) typeBadge.color = new Color(0.4f, 0.4f, 0.4f);
+        if (bestScoreText != null) bestScoreText.gameObject.SetActive(false);
+        if (starsContainer != null) starsContainer.gameObject.SetActive(false);
 
         button.interactable = false;
     }
@@ -278,27 +260,35 @@ public class LevelSelectionUI : MonoBehaviour
         {
             Image starImage = starsContainer.GetChild(i).GetComponent<Image>();
             if (starImage != null)
-            {
-                if (i < stars)
-                {
-                    starImage.color = new Color(1f, 0.84f, 0f); // Gold
-                }
-                else
-                {
-                    starImage.color = new Color(0.3f, 0.3f, 0.3f); // Gray/empty
-                }
-            }
+                starImage.color = (i < stars)
+                    ? new Color(1f, 0.84f, 0f)
+                    : new Color(0.3f, 0.3f, 0.3f);
         }
     }
 
     private void LoadLevel(int levelNumber)
     {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         Debug.Log($"Loading Level {levelNumber}");
 
         GameManager.ResetStaticData();
         PlayerPrefs.SetInt("StartLevel", levelNumber);
         PlayerPrefs.Save();
 
+        StartCoroutine(LoadLevelAfterDelay(levelNumber));
+    }
+
+    private IEnumerator LoadLevelAfterDelay(int levelNumber)
+    {
+        yield return new WaitForSecondsRealtime(0.2f);
         SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 }

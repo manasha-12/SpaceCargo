@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -18,48 +19,110 @@ public class LanderSelectionUI : MonoBehaviour
     [SerializeField] private Button playButton;
     [SerializeField] private Button backButton;
 
+    private bool isTransitioning = false;
+
+    // Debounce: track last selection time to prevent double-fire from controller
+    private float lastSelectionTime = -1f;
+    private const float SELECTION_COOLDOWN = 0.3f;
+
     private void Awake()
     {
-        // Add button listeners
-        lander1Button.onClick.AddListener(() => SelectLander(LanderSelectionManager.LanderType.Lander1));
-        lander2Button.onClick.AddListener(() => SelectLander(LanderSelectionManager.LanderType.Lander2));
-        lander3Button.onClick.AddListener(() => SelectLander(LanderSelectionManager.LanderType.Lander3));
 
-        playButton.onClick.AddListener(() => LanderSelectionManager.Instance.ConfirmSelectionAndPlay());
-        backButton.onClick.AddListener(() => LanderSelectionManager.Instance.BackToMainMenu());
+        playButton.onClick.AddListener(() =>
+        {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+
+            if (GameInput.Instance != null)
+                GameInput.Instance.DisableSubmitAction();
+
+            StartCoroutine(ConfirmAndPlayAfterDelay());
+        });
+
+        backButton.onClick.AddListener(() =>
+        {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+
+            if (GameInput.Instance != null)
+                GameInput.Instance.DisableSubmitAction();
+
+            StartCoroutine(LoadMainMenuAfterDelay());
+        });
     }
 
     private void Start()
     {
-        // Show current selection
+        // Clear any held input from previous scene immediately
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        // Disable submit so held Cross from previous scene doesn't fire
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         UpdateSelectionVisual(LanderSelectionManager.Instance.GetSelectedLander());
 
         StartCoroutine(SelectDefaultButton());
     }
 
-    private System.Collections.IEnumerator SelectDefaultButton()
+    private IEnumerator SelectDefaultButton()
     {
-        yield return null;
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        // Re-enable submit and reset debounce AFTER delay
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
+
+        // Reset selection time so first controller press isn't blocked
+        lastSelectionTime = -1f;
+
         if (EventSystem.current != null)
-        {
             EventSystem.current.SetSelectedGameObject(lander1Button.gameObject);
-        }
     }
 
-    private void SelectLander(LanderSelectionManager.LanderType landerType)
+    private IEnumerator ConfirmAndPlayAfterDelay()
     {
+        yield return new WaitForSecondsRealtime(0.2f);
+        LanderSelectionManager.Instance.ConfirmSelectionAndPlay();
+    }
+
+    private IEnumerator LoadMainMenuAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+        LanderSelectionManager.Instance.BackToMainMenu();
+    }
+
+    public void SelectLanderPublic(LanderSelectionManager.LanderType landerType)
+    {
+        if (isTransitioning) return;
+
+        // Debounce: ignore if called too soon after last selection
+        // This prevents controller from firing onClick twice in one press
+        if (Time.unscaledTime - lastSelectionTime < SELECTION_COOLDOWN)
+        {
+            Debug.Log("LanderSelectionUI: Selection debounced (double-fire prevented)");
+            return;
+        }
+
+        lastSelectionTime = Time.unscaledTime;
+
         LanderSelectionManager.Instance.SelectLander(landerType);
         UpdateSelectionVisual(landerType);
     }
 
     private void UpdateSelectionVisual(LanderSelectionManager.LanderType landerType)
     {
-        // Deactivate all borders
         if (lander1Border != null) lander1Border.SetActive(false);
         if (lander2Border != null) lander2Border.SetActive(false);
         if (lander3Border != null) lander3Border.SetActive(false);
 
-        // Activate selected border
         switch (landerType)
         {
             case LanderSelectionManager.LanderType.Lander1:

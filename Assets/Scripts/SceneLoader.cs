@@ -10,6 +10,7 @@ public static class SceneLoader
         GameOverScene,
         LanderSelectionScene,
         LevelSelectionScene,
+        PlayerNameScene,
     }
     public static void LoadScene(Scene scene)
     {

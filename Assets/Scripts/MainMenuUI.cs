@@ -8,43 +8,64 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button playButton;
     [SerializeField] private Button selectLanderButton;
     [SerializeField] private Button quitButton;
+    [SerializeField] private Button leadersButton;
+    [SerializeField] private LeaderboardUI leaderboardUI;
+
+    private bool isTransitioning = false;
 
     private void Awake()
     {
         Time.timeScale = 1f;
 
-        playButton.onClick.AddListener(() => {
+        playButton.onClick.AddListener(() =>
+        {
+            if (isTransitioning) return;
+            isTransitioning = true;
             GameManager.ResetStaticData();
-            SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
+            StartCoroutine(LoadNameScreenAfterDelay());
         });
 
-        selectLanderButton.onClick.AddListener(() => {
+        selectLanderButton.onClick.AddListener(() =>
+        {
+            if (isTransitioning) return;
+            isTransitioning = true;
             SceneLoader.LoadScene(SceneLoader.Scene.LanderSelectionScene);
         });
 
-        quitButton.onClick.AddListener(() => {
+        quitButton.onClick.AddListener(() =>
+        {
             Application.Quit();
         });
+
+        if (leadersButton != null && leaderboardUI != null)
+            leadersButton.onClick.AddListener(() => leaderboardUI.Show());
+    }
+
+    private IEnumerator LoadNameScreenAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+        SceneLoader.LoadScene(SceneLoader.Scene.PlayerNameScene);
     }
 
     private void Start()
     {
-        // Deselect everything immediately so held Submit from previous
-        // scene doesn't auto-fire the focused button
-        EventSystem.current.SetSelectedGameObject(null);
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
 
-        // Re-select after 2 frames once input state has cleared
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         StartCoroutine(SelectAfterDelay());
     }
 
     private IEnumerator SelectAfterDelay()
     {
-        yield return null; // wait 1 frame
-        yield return null; // wait 1 more frame to be safe
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
 
         if (EventSystem.current != null && playButton != null)
-        {
             EventSystem.current.SetSelectedGameObject(playButton.gameObject);
-        }
     }
 }

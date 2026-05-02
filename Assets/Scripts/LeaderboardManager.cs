@@ -1,30 +1,18 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-
-[System.Serializable]
-public class LeaderboardEntry
-{
-    public string playerName;
-    public int score;
-    public string date;
-
-    public LeaderboardEntry(string playerName, int score, string date)
-    {
-        this.playerName = playerName;
-        this.score = score;
-        this.date = date;
-    }
-}
 
 public class LeaderboardManager : MonoBehaviour
 {
     public static LeaderboardManager Instance { get; private set; }
 
-    private const string LEADERBOARD_KEY = "Leaderboard";
+    private const string SAVE_KEY = "LeaderboardData";
     private const int MAX_ENTRIES = 5;
 
-    private List<LeaderboardEntry> leaderboard = new List<LeaderboardEntry>();
+    private LeaderboardSaveData saveData;
+
+    // Current session player
+    public static string CurrentPlayerName { get; private set; } = "";
 
     private void Awake()
     {
@@ -33,112 +21,53 @@ public class LeaderboardManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        LoadLeaderboard();
+        LoadData();
     }
 
-    public bool IsHighScore(int score)
+    private void LoadData()
     {
-        // Check if score is good enough for top 5
-        if (leaderboard.Count < MAX_ENTRIES)
-        {
-            return true; // Always good if leaderboard isn't full
-        }
-
-        // Check if better than lowest score
-        return score > leaderboard[leaderboard.Count - 1].score;
-    }
-
-    public void AddScore(string playerName, int score)
-    {
-        Debug.Log($"LeaderboardManager.AddScore called: {playerName} - {score}");
-
-        string date = DateTime.Now.ToString("MM/dd/yyyy");
-        LeaderboardEntry newEntry = new LeaderboardEntry(playerName, score, date);
-
-        leaderboard.Add(newEntry);
-
-        Debug.Log($"Entry added to list. Leaderboard now has {leaderboard.Count} entries");
-
-        // Sort by score (highest first)
-        leaderboard.Sort((a, b) => b.score.CompareTo(a.score));
-
-        // Keep only top 5
-        if (leaderboard.Count > MAX_ENTRIES)
-        {
-            leaderboard.RemoveRange(MAX_ENTRIES, leaderboard.Count - MAX_ENTRIES);
-            Debug.Log($"Trimmed to {MAX_ENTRIES} entries");
-        }
-
-        SaveLeaderboard();
-
-        Debug.Log($"Leaderboard saved with {leaderboard.Count} entries");
-    }
-
-    public List<LeaderboardEntry> GetLeaderboard()
-    {
-        return new List<LeaderboardEntry>(leaderboard); // Return copy
-    }
-
-    public int GetRank(int score)
-    {
-        for (int i = 0; i < leaderboard.Count; i++)
-        {
-            if (score >= leaderboard[i].score)
-            {
-                return i + 1; // Rank is 1-based
-            }
-        }
-
-        if (leaderboard.Count < MAX_ENTRIES)
-        {
-            return leaderboard.Count + 1;
-        }
-
-        return -1; // Didn't make the leaderboard
-    }
-
-    private void SaveLeaderboard()
-    {
-        string json = JsonUtility.ToJson(new LeaderboardWrapper { entries = leaderboard });
-        PlayerPrefs.SetString(LEADERBOARD_KEY, json);
-        PlayerPrefs.Save();
-
-        Debug.Log("Leaderboard saved: " + json);
-    }
-
-    private void LoadLeaderboard()
-    {
-        string json = PlayerPrefs.GetString(LEADERBOARD_KEY, "");
-
+        string json = PlayerPrefs.GetString(SAVE_KEY, "");
         if (!string.IsNullOrEmpty(json))
-        {
-            LeaderboardWrapper wrapper = JsonUtility.FromJson<LeaderboardWrapper>(json);
-            leaderboard = wrapper.entries;
-            Debug.Log($"Leaderboard loaded: {leaderboard.Count} entries");
-        }
+            saveData = JsonUtility.FromJson<LeaderboardSaveData>(json);
         else
-        {
-            leaderboard = new List<LeaderboardEntry>();
-            Debug.Log("No leaderboard data found, starting fresh");
-        }
+            saveData = new LeaderboardSaveData();
     }
 
-    public void ClearLeaderboard()
+    private void SaveData()
     {
-        leaderboard.Clear();
-        PlayerPrefs.DeleteKey(LEADERBOARD_KEY);
+        string json = JsonUtility.ToJson(saveData);
+        PlayerPrefs.SetString(SAVE_KEY, json);
         PlayerPrefs.Save();
-        Debug.Log("Leaderboard cleared");
     }
 
-    // Wrapper class for JSON serialization (Unity can't serialize List directly)
-    [System.Serializable]
-    private class LeaderboardWrapper
+    public void SetCurrentPlayer(string name)
     {
-        public List<LeaderboardEntry> entries;
+        CurrentPlayerName = name;
+        saveData.lastPlayerName = name;
+
+        if (!saveData.knownPlayers.Contains(name))
+            saveData.knownPlayers.Add(name);
+
+        SaveData();
     }
+
+    public string GetLastPlayerName() => saveData.lastPlayerName;
+    public List<string> GetKnownPlayers() => saveData.knownPlayers;
+
+    public void SubmitScore(string playerName, int score)
+    {
+        saveData.entries.Add(new ScoreEntry(playerName, score));
+
+        // Sort descending and keep top 5
+        saveData.entries = saveData.entries
+            .OrderByDescending(e => e.score)
+            .Take(MAX_ENTRIES)
+            .ToList();
+
+        SaveData();
+    }
+
+    public List<ScoreEntry> GetTopScores() => saveData.entries;
 }
