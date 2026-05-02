@@ -1,10 +1,13 @@
-﻿using TMPro;
+﻿using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class GameOverUI : MonoBehaviour
 {
     [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Button flyAgainButton;
     [SerializeField] private TextMeshProUGUI scoreTextMesh;
     [SerializeField] private TextMeshProUGUI highScoreTextMesh;
     [SerializeField] private GameObject newHighScoreLabel;
@@ -14,8 +17,21 @@ public class GameOverUI : MonoBehaviour
     {
         mainMenuButton.onClick.AddListener(() =>
         {
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
             SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
         });
+
+        if (flyAgainButton != null)
+        {
+            flyAgainButton.onClick.AddListener(() =>
+            {
+                if (EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(null);
+                GameManager.ResetStaticData();
+                SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+            });
+        }
     }
 
     private void Start()
@@ -31,11 +47,11 @@ public class GameOverUI : MonoBehaviour
             if (highScoreTextMesh != null)
                 highScoreTextMesh.text = "HIGH SCORE: " + PlayerPrefs.GetInt("HighScore", 0);
 
-            // Still show leaderboard even without GameManager
             if (leaderboardUI != null)
                 leaderboardUI.Show();
 
-            return; 
+            StartCoroutine(SelectDefaultButton());
+            return;
         }
 
         Debug.Log("GameOverUI: GameManager found!");
@@ -44,10 +60,11 @@ public class GameOverUI : MonoBehaviour
 
         int finalScore = GameManager.Instance.GetTotalScore();
 
-        // Submit to leaderboard
-        if (LeaderboardManager.Instance != null && !string.IsNullOrEmpty(LeaderboardManager.CurrentPlayerName))
+        if (LeaderboardManager.Instance != null &&
+            !string.IsNullOrEmpty(LeaderboardManager.CurrentPlayerName))
         {
-            LeaderboardManager.Instance.SubmitScore(LeaderboardManager.CurrentPlayerName, finalScore);
+            LeaderboardManager.Instance.SubmitScore(
+                LeaderboardManager.CurrentPlayerName, finalScore);
         }
 
         int highScore = GameManager.Instance.GetHighScore();
@@ -64,8 +81,17 @@ public class GameOverUI : MonoBehaviour
         if (newHighScoreLabel != null)
             newHighScoreLabel.SetActive(isNewHighScore);
 
-        // Show leaderboard automatically in game over
         if (leaderboardUI != null)
             leaderboardUI.DisplayLeaderboard();
+
+        StartCoroutine(SelectDefaultButton());
+    }
+
+    private IEnumerator SelectDefaultButton()
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+        Button toSelect = flyAgainButton != null ? flyAgainButton : mainMenuButton;
+        if (EventSystem.current != null && toSelect != null)
+            EventSystem.current.SetSelectedGameObject(toSelect.gameObject);
     }
 }

@@ -338,7 +338,6 @@ public class GameManager : MonoBehaviour
 
     public void RetryLevel()
     {
-        levelNumber = 1;
         score = 0;
         time = 0;
         hasLoadedLevel = false;
@@ -400,6 +399,30 @@ public class GameManager : MonoBehaviour
     public bool IsNewHighScore()
     {
         return (totalScore + score) > highScore;
+    }
+
+    public bool IsGameOver()
+    {
+        // Check if Lander has no health remaining
+        if (Lander.Instance != null)
+            return Lander.Instance.GetCurrentHealth() <= 0;
+        return false;
+    }
+
+    // Retries same level without resetting to level 1
+    public void RetryCurrentLevel()
+    {
+        score = 0;
+        time = 0;
+        hasLoadedLevel = false;
+
+        if (currentLoadedLevel != null)
+        {
+            Destroy(currentLoadedLevel.gameObject);
+            currentLoadedLevel = null;
+        }
+
+        SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 }
 

@@ -1,8 +1,8 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LandedUI : MonoBehaviour
@@ -13,13 +13,15 @@ public class LandedUI : MonoBehaviour
     [SerializeField] private Button nextButton;
 
     private Action nextButtonClickAction;
+
     private void Awake()
     {
         nextButton.onClick.AddListener(() =>
         {
-            nextButtonClickAction();
+            nextButtonClickAction?.Invoke();
         });
     }
+
     private void Start()
     {
         Lander.Instance.OnLanded += Lander_OnLanded;
@@ -33,11 +35,26 @@ public class LandedUI : MonoBehaviour
             titleTextMesh.text = "WOW PERFECT LANDING!";
             nextButtonTextMesh.text = "GO AHEAD";
             nextButtonClickAction = GameManager.Instance.GoToNextLevel;
-        } else
+        }
+        else
         {
-            titleTextMesh.text = "OOPS CRASHED!";
-            nextButtonTextMesh.text = "FLY AGAIN";
-            nextButtonClickAction = GameManager.Instance.RetryLevel;
+            // Check if all lives are exhausted
+            bool isGameOver = GameManager.Instance != null
+                              && GameManager.Instance.IsGameOver();
+
+            if (isGameOver)
+            {
+                titleTextMesh.text = "GAME OVER!";
+                nextButtonTextMesh.text = "SEE RESULTS";
+                nextButtonClickAction = () =>
+                    SceneLoader.LoadScene(SceneLoader.Scene.GameOverScene);
+            }
+            else
+            {
+                titleTextMesh.text = "OOPS CRASHED!";
+                nextButtonTextMesh.text = "FLY AGAIN";
+                nextButtonClickAction = GameManager.Instance.RetryCurrentLevel;
+            }
         }
 
         statsTextMesh.text =
@@ -47,18 +64,16 @@ public class LandedUI : MonoBehaviour
             e.score;
 
         Show();
-
-        nextButton.Select();
-        EventSystem.current.SetSelectedGameObject(nextButton.gameObject);
+        StartCoroutine(SelectButtonAfterDelay());
     }
 
-    private void Show()
+    private IEnumerator SelectButtonAfterDelay()
     {
-        gameObject.SetActive(true);
+        yield return new WaitForSecondsRealtime(0.1f);
+        if (nextButton != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(nextButton.gameObject);
     }
 
-    private void Hide()
-    {
-        gameObject.SetActive(false);
-    }
+    private void Show() => gameObject.SetActive(true);
+    private void Hide() => gameObject.SetActive(false);
 }
