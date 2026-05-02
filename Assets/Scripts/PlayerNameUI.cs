@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class PlayerNameUI : MonoBehaviour
@@ -15,9 +16,15 @@ public class PlayerNameUI : MonoBehaviour
     private Button confirmButton;
     private Button showExistingButton;
     private Button newPilotButton;
+    private Button backButtonNew;
+    private Button backButtonExisting;
     private Transform playerListContainer;
     private TextMeshProUGUI errorText;
     private readonly List<GameObject> rootObjects = new List<GameObject>();
+
+    // Track all buttons per panel for navigation setup
+    private readonly List<Button> newPanelButtons = new List<Button>();
+    private readonly List<Button> existingPanelButtons = new List<Button>();
 
     // Palette
     static readonly Color C_OVERLAY = new Color(0.02f, 0.04f, 0.12f, 0.93f);
@@ -28,6 +35,7 @@ public class PlayerNameUI : MonoBehaviour
     static readonly Color C_BLUE = new Color(0.20f, 0.55f, 1.00f, 1.00f);
     static readonly Color C_BTN = new Color(0.14f, 0.48f, 0.95f, 1.00f);
     static readonly Color C_BTN_DARK = new Color(0.08f, 0.14f, 0.28f, 1.00f);
+    static readonly Color C_BTN_BACK = new Color(0.06f, 0.10f, 0.22f, 1.00f);
     static readonly Color C_INPUT = new Color(0.02f, 0.04f, 0.10f, 1.00f);
     static readonly Color C_INPUT_BD = new Color(0.30f, 0.60f, 1.00f, 0.90f);
     static readonly Color C_TEXT = new Color(0.95f, 0.97f, 1.00f, 1.00f);
@@ -35,7 +43,6 @@ public class PlayerNameUI : MonoBehaviour
     static readonly Color C_ERROR = new Color(1.00f, 0.32f, 0.32f, 1.00f);
     static readonly Color C_ROW = new Color(0.07f, 0.13f, 0.26f, 1.00f);
 
-    // ── Core UI factory ───────────────────────────────────────────────────────
     static RectTransform UI(string name, Transform parent)
     {
         var go = new GameObject(name);
@@ -49,7 +56,6 @@ public class PlayerNameUI : MonoBehaviour
         rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 
-    // Place element anchored to TOP of parent, stepping down
     static RectTransform FromTop(string name, Transform parent, float y, float w, float h)
     {
         var rt = UI(name, parent);
@@ -58,6 +64,18 @@ public class PlayerNameUI : MonoBehaviour
         rt.sizeDelta = new Vector2(w, h);
         rt.anchoredPosition = new Vector2(0f, -y);
         return rt;
+    }
+
+    // Set Navigation.Mode.Explicit up/down chain for a list of buttons
+    static void SetupNavigation(List<Button> buttons)
+    {
+        for (int i = 0; i < buttons.Count; i++)
+        {
+            var nav = new Navigation { mode = Navigation.Mode.Explicit };
+            nav.selectOnUp = i > 0 ? buttons[i - 1] : buttons[buttons.Count - 1];
+            nav.selectOnDown = i < buttons.Count - 1 ? buttons[i + 1] : buttons[0];
+            buttons[i].navigation = nav;
+        }
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -72,13 +90,14 @@ public class PlayerNameUI : MonoBehaviour
         BuildBG(crt);
         BuildTitle(crt);
 
-        // Each "panel" is a single root wrapper containing shadow + border + content
-        // So SetActive(false) on the wrapper hides ALL of them correctly
         newNamePanel = BuildNewNamePanel(crt);
         existingPlayersPanel = BuildExistingPanel(crt);
 
         rootObjects.Add(newNamePanel);
         rootObjects.Add(existingPlayersPanel);
+
+        // Wire navigation for static buttons (player rows wired separately in PopulatePlayerList)
+        SetupNavigation(newPanelButtons);
 
         newNamePanel.SetActive(false);
         existingPlayersPanel.SetActive(false);
@@ -86,6 +105,13 @@ public class PlayerNameUI : MonoBehaviour
 
     private void Start()
     {
+        // Clear any held input from previous scene
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         confirmButton?.onClick.AddListener(OnConfirm);
         newPilotButton?.onClick.AddListener(ShowNewPanel);
         showExistingButton?.onClick.AddListener(ShowExistingPanel);
@@ -155,22 +181,16 @@ public class PlayerNameUI : MonoBehaviour
             new Color(C_BLUE.r, C_BLUE.g, C_BLUE.b, 0.6f);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  PANEL WRAPPER
-    //  Returns a single root GameObject that contains shadow + border + panel.
-    //  SetActive on this wrapper shows/hides everything together.
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Wrapper ───────────────────────────────────────────────────────────────
     GameObject MakeWrapper(string name, RectTransform canvas, float w, float h,
         out RectTransform contentParent)
     {
-        // Root wrapper — invisible, just groups children
         var wrapper = UI($"{name}_Wrapper", canvas);
         wrapper.anchorMin = wrapper.anchorMax = new Vector2(0.5f, 0.5f);
         wrapper.pivot = new Vector2(0.5f, 0.5f);
         wrapper.sizeDelta = new Vector2(w + 20f, h + 20f);
         wrapper.anchoredPosition = Vector2.zero;
 
-        // Shadow — child of wrapper
         var sh = UI("Shadow", wrapper);
         sh.anchorMin = sh.anchorMax = new Vector2(0.5f, 0.5f);
         sh.pivot = new Vector2(0.5f, 0.5f);
@@ -178,7 +198,6 @@ public class PlayerNameUI : MonoBehaviour
         sh.anchoredPosition = new Vector2(8f, -8f);
         sh.gameObject.AddComponent<Image>().color = C_SHADOW;
 
-        // Border — child of wrapper
         var bd = UI("Border", wrapper);
         bd.anchorMin = bd.anchorMax = new Vector2(0.5f, 0.5f);
         bd.pivot = new Vector2(0.5f, 0.5f);
@@ -186,12 +205,11 @@ public class PlayerNameUI : MonoBehaviour
         bd.anchoredPosition = Vector2.zero;
         bd.gameObject.AddComponent<Image>().color = C_BORDER;
 
-        // Panel body — child of wrapper, PIVOT TOP so FromTop works correctly
         var pn = UI("Panel", wrapper);
         pn.anchorMin = pn.anchorMax = new Vector2(0.5f, 0.5f);
-        pn.pivot = new Vector2(0.5f, 1f);          // ← TOP pivot
+        pn.pivot = new Vector2(0.5f, 1f);
         pn.sizeDelta = new Vector2(w, h);
-        pn.anchoredPosition = new Vector2(0f, h / 2f); // offset so it stays centered
+        pn.anchoredPosition = new Vector2(0f, h / 2f);
         pn.gameObject.AddComponent<Image>().color = C_PANEL;
 
         contentParent = pn;
@@ -203,56 +221,55 @@ public class PlayerNameUI : MonoBehaviour
     // ═════════════════════════════════════════════════════════════════════════
     GameObject BuildNewNamePanel(RectTransform canvas)
     {
-        float w = 480f, h = 390f;
+        float w = 480f, h = 440f;
         RectTransform pn;
         var wrapper = MakeWrapper("NewName", canvas, w, h, out pn);
 
-        float iw = w - 60f; // inner width
-        float y = 28f;     // cursor from top of panel
+        float iw = w - 60f;
+        float y = 28f;
 
-        // Header
         Txt(FromTop("Header", pn, y, iw, 38f),
             "NEW PILOT", 26f, C_GOLD, FontStyles.Bold, TextAlignmentOptions.Center);
         y += 48f;
 
-        // Line
         Line(FromTop("L1", pn, y, iw, 1f)); y += 12f;
 
-        // Subtitle
         Txt(FromTop("Sub", pn, y, iw, 22f),
             "Enter your callsign to begin", 15f, C_MUTED,
             FontStyles.Normal, TextAlignmentOptions.Center);
         y += 32f;
 
-        // CALLSIGN label
         Txt(FromTop("Lbl", pn, y, iw, 18f),
             "CALLSIGN", 11f,
             new Color(C_BLUE.r, C_BLUE.g, C_BLUE.b, 0.85f),
             FontStyles.Bold, TextAlignmentOptions.Left);
         y += 22f;
 
-        // Input field
         nameInputField = BuildInputField(pn, y, iw, 56f); y += 64f;
 
-        // Error text
         var err = FromTop("Err", pn, y, iw, 22f);
         errorText = err.gameObject.AddComponent<TextMeshProUGUI>();
         errorText.fontSize = 14f; errorText.color = C_ERROR;
         errorText.alignment = TextAlignmentOptions.Center;
         y += 28f;
 
-        // LAUNCH MISSION
         confirmButton = Btn(FromTop("Confirm", pn, y, iw, 52f),
             "LAUNCH MISSION", C_BTN, C_TEXT, 19f, FontStyles.Bold);
+        newPanelButtons.Add(confirmButton);
         y += 62f;
 
-        // Line
         Line(FromTop("L2", pn, y, iw, 1f)); y += 12f;
 
-        // Switch button
         showExistingButton = Btn(FromTop("Switch", pn, y, iw, 38f),
             "RETURNING PILOT? CLICK HERE",
             C_BTN_DARK, C_MUTED, 13f, FontStyles.Normal);
+        newPanelButtons.Add(showExistingButton);
+        y += 48f;
+
+        backButtonNew = Btn(FromTop("BackBtn", pn, y, iw, 38f),
+            "< BACK TO MAIN MENU", C_BTN_BACK, C_MUTED, 13f, FontStyles.Normal);
+        backButtonNew.onClick.AddListener(GoBackToMainMenu);
+        newPanelButtons.Add(backButtonNew);
 
         return wrapper;
     }
@@ -262,7 +279,7 @@ public class PlayerNameUI : MonoBehaviour
     // ═════════════════════════════════════════════════════════════════════════
     GameObject BuildExistingPanel(RectTransform canvas)
     {
-        float w = 480f, h = 420f;
+        float w = 480f, h = 470f;
         RectTransform pn;
         var wrapper = MakeWrapper("Existing", canvas, w, h, out pn);
 
@@ -280,7 +297,6 @@ public class PlayerNameUI : MonoBehaviour
             FontStyles.Normal, TextAlignmentOptions.Center);
         y += 32f;
 
-        // Scroll area
         float sh = 210f;
         var scrollRt = FromTop("Scroll", pn, y, iw, sh);
         scrollRt.gameObject.AddComponent<Image>().color =
@@ -292,6 +308,13 @@ public class PlayerNameUI : MonoBehaviour
 
         newPilotButton = Btn(FromTop("NewPilot", pn, y, iw, 40f),
             "+ NEW PILOT", C_BTN_DARK, C_MUTED, 14f, FontStyles.Normal);
+        existingPanelButtons.Add(newPilotButton);
+        y += 50f;
+
+        backButtonExisting = Btn(FromTop("BackBtn", pn, y, iw, 38f),
+            "< BACK TO MAIN MENU", C_BTN_BACK, C_MUTED, 13f, FontStyles.Normal);
+        backButtonExisting.onClick.AddListener(GoBackToMainMenu);
+        existingPanelButtons.Add(backButtonExisting);
 
         return wrapper;
     }
@@ -385,7 +408,7 @@ public class PlayerNameUI : MonoBehaviour
         ph.anchorMin = Vector2.zero; ph.anchorMax = Vector2.one;
         ph.offsetMin = ph.offsetMax = Vector2.zero;
         var phT = ph.gameObject.AddComponent<TextMeshProUGUI>();
-        phT.text = "e.g.  AceFlyer99"; phT.fontSize = 19f;
+        phT.text = "e.g. AceFlyer99"; phT.fontSize = 19f;
         phT.fontStyle = FontStyles.Italic;
         phT.color = new Color(0.35f, 0.45f, 0.60f, 1f);
         phT.alignment = TextAlignmentOptions.MidlineLeft;
@@ -414,6 +437,8 @@ public class PlayerNameUI : MonoBehaviour
         var players = LeaderboardManager.Instance.GetKnownPlayers();
         if (players == null || players.Count == 0) return;
 
+        var rowButtons = new List<Button>();
+
         foreach (string pName in players)
         {
             var row = UI($"Row_{pName}", playerListContainer);
@@ -423,6 +448,7 @@ public class PlayerNameUI : MonoBehaviour
             cb.normalColor = Color.white;
             cb.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1f);
             cb.pressedColor = new Color(0.72f, 0.72f, 0.72f, 1f);
+            cb.selectedColor = new Color(1.15f, 1.15f, 1f, 1f);
             cb.colorMultiplier = 1f; btn.colors = cb;
 
             var le = row.gameObject.AddComponent<LayoutElement>();
@@ -452,23 +478,33 @@ public class PlayerNameUI : MonoBehaviour
 
             string cap = pName;
             btn.onClick.AddListener(() => SelectPlayer(cap));
+            rowButtons.Add(btn);
         }
+
+        // Chain row buttons → newPilot → back with explicit navigation
+        var allExisting = new List<Button>(rowButtons);
+        allExisting.AddRange(existingPanelButtons);
+        SetupNavigation(allExisting);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  LOGIC
+    //  PANEL SHOW / HIDE
     // ═════════════════════════════════════════════════════════════════════════
     void ShowNewPanel()
     {
         newNamePanel?.SetActive(true);
         existingPlayersPanel?.SetActive(false);
         errorText?.gameObject.SetActive(false);
+
         if (nameInputField != null)
         {
             if (LeaderboardManager.Instance != null)
                 nameInputField.text = LeaderboardManager.Instance.GetLastPlayerName();
-            nameInputField.ActivateInputField();
+            // Don't auto-activate input — let controller select the button first
         }
+
+        // Auto-select LAUNCH MISSION button for controller
+        StartCoroutine(SelectAfterDelay(confirmButton));
     }
 
     void ShowExistingPanel()
@@ -476,8 +512,44 @@ public class PlayerNameUI : MonoBehaviour
         newNamePanel?.SetActive(false);
         existingPlayersPanel?.SetActive(true);
         PopulatePlayerList();
+
+        // Auto-select first player row or newPilot button for controller
+        StartCoroutine(SelectFirstExistingButton());
     }
 
+    private IEnumerator SelectAfterDelay(Button btn)
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
+
+        if (EventSystem.current != null && btn != null)
+            EventSystem.current.SetSelectedGameObject(btn.gameObject);
+    }
+
+    private IEnumerator SelectFirstExistingButton()
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
+
+        // Select first player row if it exists, otherwise newPilot button
+        Button toSelect = newPilotButton;
+        if (playerListContainer != null && playerListContainer.childCount > 0)
+        {
+            var firstRow = playerListContainer.GetChild(0)?.GetComponent<Button>();
+            if (firstRow != null) toSelect = firstRow;
+        }
+
+        if (EventSystem.current != null && toSelect != null)
+            EventSystem.current.SetSelectedGameObject(toSelect.gameObject);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    //  LOGIC
+    // ═════════════════════════════════════════════════════════════════════════
     void SelectPlayer(string name)
     {
         LeaderboardManager.Instance?.SetCurrentPlayer(name);
@@ -504,10 +576,25 @@ public class PlayerNameUI : MonoBehaviour
         errorText.gameObject.SetActive(true);
     }
 
+    void GoBackToMainMenu()
+    {
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+        StartCoroutine(BackToMainMenuAfterDelay());
+    }
+
     IEnumerator Proceed()
     {
         GameInput.Instance?.DisableSubmitAction();
         yield return new WaitForSecondsRealtime(0.15f);
         SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
+    }
+
+    IEnumerator BackToMainMenuAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.2f);
+        SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
     }
 }
