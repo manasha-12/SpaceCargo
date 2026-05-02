@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class GameManager : MonoBehaviour
 {
@@ -106,6 +107,19 @@ public class GameManager : MonoBehaviour
             SubscribeToEvents();
             LoadCurrentLevel();
             hasLoadedLevel = true;
+
+            // Reset achievement tracking for new level
+            if (AchievementManager.Instance != null)
+            {
+                AchievementManager.Instance.ResetLevelTracking();
+
+                // Count coins in the loaded level
+                if (currentLoadedLevel != null)
+                {
+                    int coinCount = currentLoadedLevel.GetCoinCount();
+                    AchievementManager.Instance.SetTotalCoinsInLevel(coinCount);
+                }
+            }
         }
         else if (scene.name != "GameScene")
         {
@@ -240,27 +254,45 @@ public class GameManager : MonoBehaviour
 
     private void Lander_OnStateChange(object sender, Lander.OnStateChangedEventAgrs e)
     {
-        isTimerActive = e.state == Lander.State.Normal;
-
-        if (e.state == Lander.State.Normal)
+        // Show achievements when lander is in waiting state (before player presses anything)
+        if (e.state == Lander.State.WaitingToStart)
         {
-            // Find camera dynamically if reference is lost
-            if (cinemachineCamera == null)
+            if (AchievementManager.Instance != null)
             {
-                cinemachineCamera = FindFirstObjectByType<CinemachineCamera>();
+                // Count coins in current level for CollectAllCoins achievement
+                if (currentLoadedLevel != null)
+                {
+                    int coinCount = currentLoadedLevel.GetCoinCount();
+                    AchievementManager.Instance.SetTotalCoinsInLevel(coinCount);
+                }
+
+                // Reset tracking for new level session
+                AchievementManager.Instance.ResetLevelTracking();
             }
 
-            // Zoom in when player starts
-            if (cinemachineCamera != null && Lander.Instance != null)
+            // Show pre-level achievements panel
+            if (AchievementUI.Instance != null)
             {
-                cinemachineCamera.Target.TrackingTarget = Lander.Instance.transform;
-            }
-
-            if (CinemachineCameraZoom2D.Instance != null)
-            {
-                CinemachineCameraZoom2D.Instance.SetNormalOrthographicSize();
+                AchievementUI.Instance.ShowPreLevelAchievements(levelNumber, () => { });
             }
         }
+
+        // Hide achievement panel when player starts moving
+        if (e.state == Lander.State.Normal)
+        {
+            AchievementUI.Instance?.HidePreLevel();
+
+            if (cinemachineCamera == null)
+                cinemachineCamera = FindFirstObjectByType<CinemachineCamera>();
+
+            if (cinemachineCamera != null && Lander.Instance != null)
+                cinemachineCamera.Target.TrackingTarget = Lander.Instance.transform;
+
+            if (CinemachineCameraZoom2D.Instance != null)
+                CinemachineCameraZoom2D.Instance.SetNormalOrthographicSize();
+        }
+
+        isTimerActive = e.state == Lander.State.Normal;
     }
 
     private void Update()
@@ -279,6 +311,7 @@ public class GameManager : MonoBehaviour
     private void Lander_OnCoinPickup(object sender, System.EventArgs e)
     {
         AddScore(500);
+        AchievementManager.Instance?.OnCoinCollected();
     }
 
     public void AddScore(int addScoreAmount)

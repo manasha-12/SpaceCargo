@@ -28,8 +28,8 @@ public class Lander : MonoBehaviour
 
     [Header("Shooting System")]
     [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private Transform firePoint; // Where bullets spawn
-    [SerializeField] private float fireRate = 0.3f; // Time between shots
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private float fireRate = 0.3f;
 
     private float nextFireTime = 0f;
 
@@ -41,7 +41,6 @@ public class Lander : MonoBehaviour
     public event EventHandler OnCoinPickup;
     public event EventHandler<OnLandedEventArgs> OnLanded;
     public class OnLandedEventArgs : EventArgs
-
     {
         public LandingType landingType;
         public int score;
@@ -65,12 +64,11 @@ public class Lander : MonoBehaviour
         GameOver,
     }
 
-
     private Rigidbody2D landerRigidbody2D;
     private float fuelAmount;
     private float fuelAmountMax = 10f;
 
-    private State state=State.WaitingToStart;
+    private State state = State.WaitingToStart;
 
     private Coroutine slowFallCoroutine;
 
@@ -84,7 +82,6 @@ public class Lander : MonoBehaviour
 
         Instance = this;
 
-        // Configure rigidbody for smooth movement
         landerRigidbody2D.linearDamping = 0.5f;
         landerRigidbody2D.angularDamping = 2f;
         landerRigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -98,15 +95,20 @@ public class Lander : MonoBehaviour
         switch (state)
         {
             default:
-                case State.WaitingToStart:
-                    if (Keyboard.current.upArrowKey.isPressed ||
-                        Keyboard.current.leftArrowKey.isPressed ||
-                        Keyboard.current.rightArrowKey.isPressed)
-                    {
-                        landerRigidbody2D.gravityScale = GRAVITY_NORAML;
-                        SetState(State.Normal);
-                    }
-                    break;
+            case State.WaitingToStart:
+                // Also accept controller input (R2/Cross) to start
+                if (GameInput.Instance.IsUpActionPressed() ||
+                    GameInput.Instance.IsLeftActionPressed() ||
+                    GameInput.Instance.IsRightActionPressed() ||
+                    Keyboard.current.upArrowKey.isPressed ||
+                    Keyboard.current.leftArrowKey.isPressed ||
+                    Keyboard.current.rightArrowKey.isPressed)
+                {
+                    landerRigidbody2D.gravityScale = GRAVITY_NORAML;
+                    SetState(State.Normal);
+                }
+                break;
+
             case State.Normal:
                 if (fuelAmount <= 0f)
                 {
@@ -148,30 +150,23 @@ public class Lander : MonoBehaviour
                     HandleShooting();
                 }
                 break;
+
             case State.GameOver:
                 break;
         }
 
-        
-
-        // Limit angular velocity for smoother rotation
-        landerRigidbody2D.angularVelocity = Mathf.Clamp(landerRigidbody2D.angularVelocity, -200f, 200f);
+        landerRigidbody2D.angularVelocity =
+            Mathf.Clamp(landerRigidbody2D.angularVelocity, -200f, 200f);
     }
 
     private void OutOfFuel()
     {
         Debug.Log("Out of fuel! Game Over!");
 
-        // Take all remaining health to trigger full game over
         if (currentHealth > 0)
-        {
             TakeDamage(currentHealth);
-        }
 
-        // Set state to game over
         SetState(State.GameOver);
-
-        // Load the final GameOverScene directly
         SceneLoader.LoadScene(SceneLoader.Scene.GameOverScene);
     }
 
@@ -181,7 +176,6 @@ public class Lander : MonoBehaviour
     {
         isInvincible = true;
 
-        // Flash the sprite
         SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         if (spriteRenderer != null)
         {
@@ -202,11 +196,8 @@ public class Lander : MonoBehaviour
         currentHealth -= damage;
 
         if (currentHealth < 0)
-        {
             currentHealth = 0;
-        }
 
-        // Notify UI of health change
         OnHealthChanged?.Invoke(this, new OnHealthChangedEventArgs
         {
             currentHealth = currentHealth,
@@ -217,34 +208,20 @@ public class Lander : MonoBehaviour
         Debug.Log($"Lander took {damage} damage! Health: {currentHealth}/{maxHealth}");
     }
 
-    public int GetCurrentHealth()
-    {
-        return currentHealth;
-    }
-
-    public int GetMaxHealth()
-    {
-        return maxHealth;
-    }
-
-    public float GetHealthNormalized()
-    {
-        return (float)currentHealth / maxHealth;
-    }
+    public int GetCurrentHealth() => currentHealth;
+    public int GetMaxHealth() => maxHealth;
+    public float GetHealthNormalized() => (float)currentHealth / maxHealth;
 
     private void OnCollisionEnter2D(Collision2D collision2D)
     {
-        // Skip collision if invincible
         if (isInvincible) return;
 
         if (!collision2D.gameObject.TryGetComponent(out LandingPad landingPad))
         {
-            // CRASH - Take damage
             TakeDamage(1);
 
             if (currentHealth <= 0)
             {
-                // FATAL CRASH - Health is 0, trigger game over
                 Debug.Log("The lander has been destroyed! (Health = 0)");
 
                 OnLanded?.Invoke(this, new OnLandedEventArgs
@@ -260,33 +237,28 @@ public class Lander : MonoBehaviour
             }
             else
             {
-                // NON-FATAL CRASH - Survive, just bounce
                 Debug.Log($"Crash survived! Health remaining: {currentHealth}/{maxHealth}");
 
-                // DO NOT invoke OnLanded event!
-                // Just bounce and keep playing
-
-                Vector2 bounceDirection = (transform.position - collision2D.transform.position).normalized;
+                Vector2 bounceDirection =
+                    (transform.position - collision2D.transform.position).normalized;
                 landerRigidbody2D.AddForce(bounceDirection * 5f, ForceMode2D.Impulse);
 
-                // Brief invincibility to prevent multiple hits
                 StartCoroutine(InvincibilityFrames());
             }
             return;
         }
 
-        // Rest of landing pad collision code...
+        // ── Hit a landing pad ─────────────────────────────────────────────
+
         float softLandingVelocityMagnitude = 4f;
         float relativeVelocityMagnitude = collision2D.relativeVelocity.magnitude;
 
         if (relativeVelocityMagnitude > softLandingVelocityMagnitude)
         {
-            // LANDING TOO FAST - Treat as crash
             TakeDamage(1);
 
             if (currentHealth <= 0)
             {
-                // Fatal
                 Debug.Log("Landed too hard - Destroyed!");
                 OnLanded?.Invoke(this, new OnLandedEventArgs
                 {
@@ -300,27 +272,22 @@ public class Lander : MonoBehaviour
             }
             else
             {
-                // Non-fatal - just bounce
                 Debug.Log($"Landed too hard but survived! Health: {currentHealth}/{maxHealth}");
-                Vector2 bounceDirection = Vector2.up;
-                landerRigidbody2D.AddForce(bounceDirection * 3f, ForceMode2D.Impulse);
+                landerRigidbody2D.AddForce(Vector2.up * 3f, ForceMode2D.Impulse);
                 StartCoroutine(InvincibilityFrames());
             }
             return;
         }
 
-        // Check landing angle
         float dotVector = Vector2.Dot(Vector2.up, transform.up);
-        float minDotVector = .90f;
+        float minDotVector = 0.90f;
 
         if (dotVector < minDotVector)
         {
-            // LANDING TOO STEEP - Treat as crash
             TakeDamage(1);
 
             if (currentHealth <= 0)
             {
-                // Fatal
                 Debug.Log("Landed at too steep angle - Destroyed!");
                 OnLanded?.Invoke(this, new OnLandedEventArgs
                 {
@@ -334,26 +301,31 @@ public class Lander : MonoBehaviour
             }
             else
             {
-                // Non-fatal - just bounce
                 Debug.Log($"Landed at steep angle but survived! Health: {currentHealth}/{maxHealth}");
-                Vector2 bounceDirection = transform.up;
-                landerRigidbody2D.AddForce(bounceDirection * 3f, ForceMode2D.Impulse);
+                landerRigidbody2D.AddForce(transform.up * 3f, ForceMode2D.Impulse);
                 StartCoroutine(InvincibilityFrames());
             }
             return;
         }
 
-        // SUCCESSFUL LANDING
+        // ── SUCCESSFUL LANDING ────────────────────────────────────────────
+
         Debug.Log("Successful Landing!");
+
+        // ↓↓ ACHIEVEMENT HOOK: notify landing pad (tracks "first pad" achievement)
+        landingPad.OnLanderLanded();
 
         float maxScoreAmountLandingAngle = 100;
         float scoreDotVectorMultiplier = 10f;
-        float landingAngleScore = maxScoreAmountLandingAngle - Mathf.Abs(dotVector - 1f) * scoreDotVectorMultiplier * maxScoreAmountLandingAngle;
+        float landingAngleScore = maxScoreAmountLandingAngle
+            - Mathf.Abs(dotVector - 1f) * scoreDotVectorMultiplier * maxScoreAmountLandingAngle;
 
         float maxScoreAmountLandingSpeed = 100;
-        float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude) * maxScoreAmountLandingSpeed;
+        float landingSpeedScore = (softLandingVelocityMagnitude - relativeVelocityMagnitude)
+            * maxScoreAmountLandingSpeed;
 
-        int score = Mathf.RoundToInt((landingAngleScore + landingSpeedScore) * landingPad.GetScoreMultiplier());
+        int score = Mathf.RoundToInt(
+            (landingAngleScore + landingSpeedScore) * landingPad.GetScoreMultiplier());
 
         OnLanded?.Invoke(this, new OnLandedEventArgs
         {
@@ -371,7 +343,6 @@ public class Lander : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        // Notify UI of health reset
         OnHealthChanged?.Invoke(this, new OnHealthChangedEventArgs
         {
             currentHealth = currentHealth,
@@ -390,11 +361,13 @@ public class Lander : MonoBehaviour
             fuelAmount += addFuelAmount;
 
             if (fuelAmount > fuelAmountMax)
-            {
                 fuelAmount = fuelAmountMax;
-            }
 
-            Debug.Log("Fuel collected! Adding: " + addFuelAmount + " | New fuel total: " + fuelAmount);
+            Debug.Log("Fuel collected! Adding: " + addFuelAmount
+                      + " | New fuel total: " + fuelAmount);
+
+            // ↓↓ ACHIEVEMENT HOOK: notify achievement manager
+            AchievementManager.Instance?.OnFuelPickedUp();
 
             fuelPickUp.destroySelf();
         }
@@ -402,7 +375,6 @@ public class Lander : MonoBehaviour
         if (collider2D.gameObject.TryGetComponent(out CoinPickup coinPickup))
         {
             OnCoinPickup?.Invoke(this, EventArgs.Empty);
-
             coinPickup.DestroySelf();
         }
     }
@@ -410,7 +382,7 @@ public class Lander : MonoBehaviour
     private void SetState(State state)
     {
         this.state = state;
-        OnStateChange?.Invoke(this, new OnStateChangedEventAgrs { state = state});
+        OnStateChange?.Invoke(this, new OnStateChangedEventAgrs { state = state });
     }
 
     private void ConsumeFuel()
@@ -419,33 +391,15 @@ public class Lander : MonoBehaviour
         fuelAmount -= fuelConsumptionValue * Time.deltaTime;
     }
 
-    public float GetFuel()
-    {
-        return fuelAmount;
-    }
-
-    public float GetSpeedX()
-    {
-       return landerRigidbody2D.linearVelocityX;
-    }
-
-    public float GetSpeedY()
-    {
-        return landerRigidbody2D.linearVelocityY;
-    }
-
-    public float GetFuelAmountNormalized()
-    {
-        return fuelAmount / fuelAmountMax;
-    }
+    public float GetFuel() => fuelAmount;
+    public float GetSpeedX() => landerRigidbody2D.linearVelocityX;
+    public float GetSpeedY() => landerRigidbody2D.linearVelocityY;
+    public float GetFuelAmountNormalized() => fuelAmount / fuelAmountMax;
 
     public void ApplySlowFall(float duration, float reducedGravity)
     {
-        // Stop existing slow fall if active
         if (slowFallCoroutine != null)
-        {
             StopCoroutine(slowFallCoroutine);
-        }
 
         slowFallCoroutine = StartCoroutine(SlowFallCoroutine(duration, reducedGravity));
     }
@@ -456,7 +410,6 @@ public class Lander : MonoBehaviour
         landerRigidbody2D.gravityScale = reducedGravity;
 
         Debug.Log("Slow Fall Active!");
-
         yield return new WaitForSeconds(duration);
 
         landerRigidbody2D.gravityScale = originalGravity;
@@ -467,7 +420,6 @@ public class Lander : MonoBehaviour
 
     private void HandleShooting()
     {
-        // Use GameInput instead of Input.GetKey
         if (GameInput.Instance.IsShootPressed() && Time.time >= nextFireTime)
         {
             ShootProjectile();
@@ -483,17 +435,12 @@ public class Lander : MonoBehaviour
             return;
         }
 
-        // Determine spawn position
         Vector3 spawnPosition = firePoint != null ? firePoint.position : transform.position;
-
-        // Spawn bullet facing the same direction as the lander
-        GameObject bullet = Instantiate(bulletPrefab, spawnPosition, transform.rotation);
+        Instantiate(bulletPrefab, spawnPosition, transform.rotation);
 
         ParticleSystem muzzleFlash = firePoint?.GetComponentInChildren<ParticleSystem>();
         if (muzzleFlash != null)
-        {
             muzzleFlash.Play();
-        }
 
         Debug.Log("Bullet fired!");
     }

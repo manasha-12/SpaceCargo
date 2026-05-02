@@ -1614,6 +1614,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LandingPad (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 5413231993340879523, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
+      propertyPath: isFirstPad
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6057004913849874855, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -0.11
@@ -2009,6 +2013,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LandingPad (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 5413231993340879523, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
+      propertyPath: isFirstPad
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6057004913849874855, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -0.11
@@ -2342,6 +2350,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LandingPad (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 5413231993340879523, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
+      propertyPath: isFirstPad
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6057004913849874855, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -0.11
@@ -2550,6 +2562,10 @@ PrefabInstance:
     - target: {fileID: 5223694393372550660, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
       propertyPath: m_Name
       value: LandingPad (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5413231993340879523, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
+      propertyPath: isFirstPad
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6057004913849874855, guid: 9ffc9950666bc3641a10d66d197dc70a, type: 3}
       propertyPath: m_AnchoredPosition.x

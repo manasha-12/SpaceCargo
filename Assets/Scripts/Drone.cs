@@ -96,7 +96,7 @@ public class Drone : MonoBehaviour
         {
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         }
-
+        AchievementManager.Instance?.OnDroneKilled();
         Destroy(gameObject);
     }
 

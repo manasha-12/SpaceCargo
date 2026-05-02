@@ -11,6 +11,7 @@ public class FuelPickUp : MonoBehaviour
 
     public void destroySelf()
     {
+        AchievementManager.Instance?.OnFuelPickedUp();
         Destroy(gameObject);
     }
 }

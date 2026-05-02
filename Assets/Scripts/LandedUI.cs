@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -32,13 +33,41 @@ public class LandedUI : MonoBehaviour
     {
         if (e.landingType == Lander.LandingType.Success)
         {
+            // Set all text and action FIRST
             titleTextMesh.text = "WOW PERFECT LANDING!";
             nextButtonTextMesh.text = "GO AHEAD";
             nextButtonClickAction = GameManager.Instance.GoToNextLevel;
+            SetStats(e);
+
+            if (AchievementManager.Instance != null && GameManager.Instance != null)
+            {
+                int level = GameManager.Instance.GetLevelNumber();
+                bool fullHealth = Lander.Instance.GetCurrentHealth()
+                               >= Lander.Instance.GetMaxHealth();
+
+                List<Achievement> newlyCompleted =
+                    AchievementManager.Instance.EvaluateAchievements(
+                        level, e.landingSpeed, e.score, fullHealth);
+
+                if (AchievementUI.Instance != null)
+                {
+                    AchievementUI.Instance.ShowPostLandingAchievements(
+                        newlyCompleted,
+                        AchievementManager.Instance.GetTotalStars(),
+                        () =>
+                        {
+                            Show();
+                            StartCoroutine(SelectButtonAfterDelay());
+                        });
+                    return;
+                }
+            }
+
+            Show();
+            StartCoroutine(SelectButtonAfterDelay());
         }
         else
         {
-            // Check if all lives are exhausted
             bool isGameOver = GameManager.Instance != null
                               && GameManager.Instance.IsGameOver();
 
@@ -55,16 +84,20 @@ public class LandedUI : MonoBehaviour
                 nextButtonTextMesh.text = "FLY AGAIN";
                 nextButtonClickAction = GameManager.Instance.RetryCurrentLevel;
             }
-        }
 
+            SetStats(e);
+            Show();
+            StartCoroutine(SelectButtonAfterDelay());
+        }
+    }
+
+    private void SetStats(Lander.OnLandedEventArgs e)
+    {
         statsTextMesh.text =
             Mathf.Round(e.landingSpeed * 2f) + "\n" +
             Mathf.Round(e.dotVector * 100f) + "\n" +
             "x" + e.scoreMultiplier + "\n" +
             e.score;
-
-        Show();
-        StartCoroutine(SelectButtonAfterDelay());
     }
 
     private IEnumerator SelectButtonAfterDelay()

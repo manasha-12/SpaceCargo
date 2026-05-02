@@ -26,4 +26,10 @@ public class GameLevel : MonoBehaviour
     {
         return zoomedOutOrthographicSize;
     }
+
+    public int GetCoinCount()
+    {
+        // Counts all CoinPickup components in this level's hierarchy
+        return GetComponentsInChildren<CoinPickup>().Length;
+    }
 }
