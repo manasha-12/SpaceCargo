@@ -33,7 +33,7 @@ public class GameOverUI : MonoBehaviour
 
             // Still show leaderboard even without GameManager
             if (leaderboardUI != null)
-                leaderboardUI.DisplayLeaderboard();
+                leaderboardUI.Show();
 
             return; 
         }

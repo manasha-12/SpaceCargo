@@ -162,6 +162,6 @@ public class PlayerNameUI : MonoBehaviour
             GameInput.Instance.DisableSubmitAction();
 
         yield return new WaitForSecondsRealtime(0.2f);
-        SceneLoader.LoadScene(SceneLoader.Scene.LanderSelectionScene);
+        SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
     }
 }

@@ -68,7 +68,7 @@ public class LanderSelectionManager : MonoBehaviour
     public void ConfirmSelectionAndPlay()
     {
         GameManager.ResetStaticData();
-        SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+        SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
     }
 
     public void BackToMainMenu()
