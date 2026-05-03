@@ -31,13 +31,12 @@ public class PausedUI : MonoBehaviour
         {
             mainMenuButton.onClick.AddListener(() =>
             {
-                // Deselect and disable submit BEFORE loading scene
                 if (EventSystem.current != null)
                     EventSystem.current.SetSelectedGameObject(null);
-
                 if (GameInput.Instance != null)
                     GameInput.Instance.DisableSubmitAction();
 
+                GameStateManager.SetGameInactive();
                 Time.timeScale = 1f;
 
                 StartCoroutine(LoadMainMenuAfterDelay());
@@ -47,7 +46,6 @@ public class PausedUI : MonoBehaviour
 
     private IEnumerator LoadMainMenuAfterDelay()
     {
-        // Time-based delay so Cross release is registered before new scene loads
         yield return new WaitForSecondsRealtime(0.3f);
         SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
     }
@@ -55,7 +53,6 @@ public class PausedUI : MonoBehaviour
     private void Start()
     {
         if (GameManager.Instance == null) return;
-
         GameManager.Instance.OnGamePaused -= GameManager_OnGamePaused;
         GameManager.Instance.OnGameUnPaused -= GameManager_OnGameUnPaused;
         GameManager.Instance.OnGamePaused += GameManager_OnGamePaused;
@@ -71,8 +68,19 @@ public class PausedUI : MonoBehaviour
         }
     }
 
-    private void GameManager_OnGamePaused(object sender, System.EventArgs e) => Show();
-    private void GameManager_OnGameUnPaused(object sender, System.EventArgs e) => Hide();
+    private void GameManager_OnGamePaused(object sender, System.EventArgs e)
+    {
+        // Freeze all enemies when paused
+        GameStateManager.SetGameInactive();
+        Show();
+    }
+
+    private void GameManager_OnGameUnPaused(object sender, System.EventArgs e)
+    {
+        // Resume all enemies when unpaused
+        GameStateManager.SetGameActive();
+        Hide();
+    }
 
     private void Show()
     {
@@ -82,7 +90,6 @@ public class PausedUI : MonoBehaviour
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
         }
-
         StartCoroutine(SelectResumeAfterDelay());
     }
 
@@ -101,7 +108,6 @@ public class PausedUI : MonoBehaviour
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
         }
-
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
     }
