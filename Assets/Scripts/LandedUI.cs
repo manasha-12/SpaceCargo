@@ -19,6 +19,8 @@ public class LandedUI : MonoBehaviour
     {
         nextButton.onClick.AddListener(() =>
         {
+            // Hide achievement panel at same time as proceeding
+            AchievementUI.Instance?.HidePostLanding();
             nextButtonClickAction?.Invoke();
         });
     }
@@ -33,7 +35,6 @@ public class LandedUI : MonoBehaviour
     {
         if (e.landingType == Lander.LandingType.Success)
         {
-            // Set all text and action FIRST
             titleTextMesh.text = "WOW PERFECT LANDING!";
             nextButtonTextMesh.text = "GO AHEAD";
             nextButtonClickAction = GameManager.Instance.GoToNextLevel;
@@ -45,14 +46,19 @@ public class LandedUI : MonoBehaviour
                 bool fullHealth = Lander.Instance.GetCurrentHealth()
                                >= Lander.Instance.GetMaxHealth();
 
-                List<Achievement> newlyCompleted =
-                    AchievementManager.Instance.EvaluateAchievements(
-                        level, e.landingSpeed, e.score, fullHealth);
+                // Evaluate — marks which achievements were completed this run
+                AchievementManager.Instance.EvaluateAchievements(
+                    level, e.landingSpeed, e.score, fullHealth);
+
+                // Get ALL achievements for this level (completed + not completed)
+                // so the UI always shows the full list regardless of what was achieved
+                List<Achievement> allAchievements =
+                    AchievementManager.Instance.GetAchievementsForLevel(level);
 
                 if (AchievementUI.Instance != null)
                 {
                     AchievementUI.Instance.ShowPostLandingAchievements(
-                        newlyCompleted,
+                        allAchievements,          // full list — always 3
                         AchievementManager.Instance.GetTotalStars(),
                         () =>
                         {
