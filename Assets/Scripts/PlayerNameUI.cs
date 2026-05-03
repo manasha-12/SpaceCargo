@@ -22,11 +22,9 @@ public class PlayerNameUI : MonoBehaviour
     private TextMeshProUGUI errorText;
     private readonly List<GameObject> rootObjects = new List<GameObject>();
 
-    // Track all buttons per panel for navigation setup
     private readonly List<Button> newPanelButtons = new List<Button>();
     private readonly List<Button> existingPanelButtons = new List<Button>();
 
-    // Palette
     static readonly Color C_OVERLAY = new Color(0.02f, 0.04f, 0.12f, 0.93f);
     static readonly Color C_PANEL = new Color(0.05f, 0.09f, 0.20f, 0.98f);
     static readonly Color C_BORDER = new Color(0.25f, 0.55f, 1.00f, 1.00f);
@@ -66,7 +64,6 @@ public class PlayerNameUI : MonoBehaviour
         return rt;
     }
 
-    // Set Navigation.Mode.Explicit up/down chain for a list of buttons
     static void SetupNavigation(List<Button> buttons)
     {
         for (int i = 0; i < buttons.Count; i++)
@@ -78,7 +75,7 @@ public class PlayerNameUI : MonoBehaviour
         }
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────
     private void Awake()
     {
         var crt = (targetCanvas != null ? targetCanvas
@@ -96,7 +93,6 @@ public class PlayerNameUI : MonoBehaviour
         rootObjects.Add(newNamePanel);
         rootObjects.Add(existingPlayersPanel);
 
-        // Wire navigation for static buttons (player rows wired separately in PopulatePlayerList)
         SetupNavigation(newPanelButtons);
 
         newNamePanel.SetActive(false);
@@ -105,7 +101,6 @@ public class PlayerNameUI : MonoBehaviour
 
     private void Start()
     {
-        // Clear any held input from previous scene
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
 
@@ -135,7 +130,7 @@ public class PlayerNameUI : MonoBehaviour
         rootObjects.Clear();
     }
 
-    // ── Background ────────────────────────────────────────────────────────────
+    // ── Background ────────────────────────────────────────────────────────
     void BuildBG(RectTransform c)
     {
         var ov = UI("Overlay", c); ov.transform.SetAsFirstSibling();
@@ -181,7 +176,7 @@ public class PlayerNameUI : MonoBehaviour
             new Color(C_BLUE.r, C_BLUE.g, C_BLUE.b, 0.6f);
     }
 
-    // ── Wrapper ───────────────────────────────────────────────────────────────
+    // ── Wrapper ───────────────────────────────────────────────────────────
     GameObject MakeWrapper(string name, RectTransform canvas, float w, float h,
         out RectTransform contentParent)
     {
@@ -216,9 +211,7 @@ public class PlayerNameUI : MonoBehaviour
         return wrapper.gameObject;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  NEW NAME PANEL
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── New Name Panel ────────────────────────────────────────────────────
     GameObject BuildNewNamePanel(RectTransform canvas)
     {
         float w = 480f, h = 440f;
@@ -274,9 +267,7 @@ public class PlayerNameUI : MonoBehaviour
         return wrapper;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  EXISTING PLAYERS PANEL
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Existing Players Panel ────────────────────────────────────────────
     GameObject BuildExistingPanel(RectTransform canvas)
     {
         float w = 480f, h = 470f;
@@ -346,9 +337,7 @@ public class PlayerNameUI : MonoBehaviour
         playerListContainer = content;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  ELEMENT HELPERS
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Element Helpers ───────────────────────────────────────────────────
     static void Txt(RectTransform rt, string text, float size, Color color,
         FontStyles style, TextAlignmentOptions align)
     {
@@ -426,9 +415,7 @@ public class PlayerNameUI : MonoBehaviour
         return field;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  PLAYER LIST
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Player List ───────────────────────────────────────────────────────
     void PopulatePlayerList()
     {
         if (playerListContainer == null || LeaderboardManager.Instance == null) return;
@@ -481,29 +468,21 @@ public class PlayerNameUI : MonoBehaviour
             rowButtons.Add(btn);
         }
 
-        // Chain row buttons → newPilot → back with explicit navigation
         var allExisting = new List<Button>(rowButtons);
         allExisting.AddRange(existingPanelButtons);
         SetupNavigation(allExisting);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  PANEL SHOW / HIDE
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Panel Show / Hide ─────────────────────────────────────────────────
     void ShowNewPanel()
     {
         newNamePanel?.SetActive(true);
         existingPlayersPanel?.SetActive(false);
         errorText?.gameObject.SetActive(false);
 
-        if (nameInputField != null)
-        {
-            if (LeaderboardManager.Instance != null)
-                nameInputField.text = LeaderboardManager.Instance.GetLastPlayerName();
-            // Don't auto-activate input — let controller select the button first
-        }
+        if (nameInputField != null && LeaderboardManager.Instance != null)
+            nameInputField.text = LeaderboardManager.Instance.GetLastPlayerName();
 
-        // Auto-select LAUNCH MISSION button for controller
         StartCoroutine(SelectAfterDelay(confirmButton));
     }
 
@@ -512,18 +491,13 @@ public class PlayerNameUI : MonoBehaviour
         newNamePanel?.SetActive(false);
         existingPlayersPanel?.SetActive(true);
         PopulatePlayerList();
-
-        // Auto-select first player row or newPilot button for controller
         StartCoroutine(SelectFirstExistingButton());
     }
 
     private IEnumerator SelectAfterDelay(Button btn)
     {
         yield return new WaitForSecondsRealtime(0.3f);
-
-        if (GameInput.Instance != null)
-            GameInput.Instance.EnableSubmitAction();
-
+        if (GameInput.Instance != null) GameInput.Instance.EnableSubmitAction();
         if (EventSystem.current != null && btn != null)
             EventSystem.current.SetSelectedGameObject(btn.gameObject);
     }
@@ -531,11 +505,8 @@ public class PlayerNameUI : MonoBehaviour
     private IEnumerator SelectFirstExistingButton()
     {
         yield return new WaitForSecondsRealtime(0.3f);
+        if (GameInput.Instance != null) GameInput.Instance.EnableSubmitAction();
 
-        if (GameInput.Instance != null)
-            GameInput.Instance.EnableSubmitAction();
-
-        // Select first player row if it exists, otherwise newPilot button
         Button toSelect = newPilotButton;
         if (playerListContainer != null && playerListContainer.childCount > 0)
         {
@@ -547,9 +518,7 @@ public class PlayerNameUI : MonoBehaviour
             EventSystem.current.SetSelectedGameObject(toSelect.gameObject);
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  LOGIC
-    // ═════════════════════════════════════════════════════════════════════════
+    // ── Logic ─────────────────────────────────────────────────────────────
     void SelectPlayer(string name)
     {
         LeaderboardManager.Instance?.SetCurrentPlayer(name);
@@ -589,6 +558,11 @@ public class PlayerNameUI : MonoBehaviour
     {
         GameInput.Instance?.DisableSubmitAction();
         yield return new WaitForSecondsRealtime(0.15f);
+
+        // Reload level unlock/stars/scores for this specific player
+        // so LevelSelectionScene shows only what THIS player has unlocked
+        LevelSelectionManager.LoadPlayerData();
+
         SceneLoader.LoadScene(SceneLoader.Scene.LevelSelectionScene);
     }
 

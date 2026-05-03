@@ -5,10 +5,14 @@ public class LevelSelectionManager : MonoBehaviour
 {
     public static LevelSelectionManager Instance { get; private set; }
 
-    private const string UNLOCKED_LEVELS_KEY = "UnlockedLevels";
-    private static int maxUnlockedLevel = 1;
+    // Per-player keys — player name is included so data is isolated
+    private static string UnlockedKey => $"UnlockedLevels_{CurrentPlayer}";
+    private static string StarsKey(int level) => $"Level{level}Stars_{CurrentPlayer}";
+    private static string BestScoreKey(int level) => $"Level{level}BestScore_{CurrentPlayer}";
 
-    // Store level completion data
+    private static string CurrentPlayer => LeaderboardManager.CurrentPlayerName;
+
+    private static int maxUnlockedLevel = 1;
     private static Dictionary<int, int> levelStars = new Dictionary<int, int>();
     private static Dictionary<int, int> levelBestScores = new Dictionary<int, int>();
 
@@ -19,47 +23,42 @@ public class LevelSelectionManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        // Load unlocked levels
-        maxUnlockedLevel = PlayerPrefs.GetInt(UNLOCKED_LEVELS_KEY, 1);
-
-        // Load all saved stars and scores
-        LoadAllLevelData();
+        LoadPlayerData();
     }
 
-    private void LoadAllLevelData()
+    // Call this whenever the current player changes (e.g. from PlayerNameUI)
+    public static void LoadPlayerData()
     {
-        // Load stars and scores for all potentially unlocked levels
+        levelStars.Clear();
+        levelBestScores.Clear();
+
+        // Load THIS player's unlocked level count (default 1)
+        maxUnlockedLevel = PlayerPrefs.GetInt(UnlockedKey, 1);
+
+        // Load stars and scores for all their unlocked levels
         for (int i = 1; i <= maxUnlockedLevel; i++)
         {
-            int stars = PlayerPrefs.GetInt($"Level{i}Stars", 0);
-            int bestScore = PlayerPrefs.GetInt($"Level{i}BestScore", 0);
-
+            int stars = PlayerPrefs.GetInt(StarsKey(i), 0);
+            int bestScore = PlayerPrefs.GetInt(BestScoreKey(i), 0);
             if (stars > 0) levelStars[i] = stars;
             if (bestScore > 0) levelBestScores[i] = bestScore;
         }
+
+        Debug.Log($"LevelSelectionManager: Loaded data for '{CurrentPlayer}' — maxLevel={maxUnlockedLevel}");
     }
 
-    public static int GetMaxUnlockedLevel()
-    {
-        return maxUnlockedLevel;
-    }
+    public static int GetMaxUnlockedLevel() => maxUnlockedLevel;
 
-    public static bool IsLevelUnlocked(int levelNumber)
-    {
-        return levelNumber <= maxUnlockedLevel;
-    }
+    public static bool IsLevelUnlocked(int levelNumber) => levelNumber <= maxUnlockedLevel;
 
     public static void UnlockNextLevel()
     {
         maxUnlockedLevel++;
-        PlayerPrefs.SetInt(UNLOCKED_LEVELS_KEY, maxUnlockedLevel);
+        PlayerPrefs.SetInt(UnlockedKey, maxUnlockedLevel);
         PlayerPrefs.Save();
-
-        Debug.Log($"Unlocked level {maxUnlockedLevel}!");
+        Debug.Log($"'{CurrentPlayer}' unlocked level {maxUnlockedLevel}!");
     }
 
     public static void UnlockLevel(int levelNumber)
@@ -67,7 +66,7 @@ public class LevelSelectionManager : MonoBehaviour
         if (levelNumber > maxUnlockedLevel)
         {
             maxUnlockedLevel = levelNumber;
-            PlayerPrefs.SetInt(UNLOCKED_LEVELS_KEY, maxUnlockedLevel);
+            PlayerPrefs.SetInt(UnlockedKey, maxUnlockedLevel);
             PlayerPrefs.Save();
         }
     }
@@ -75,42 +74,35 @@ public class LevelSelectionManager : MonoBehaviour
     public static void SetLevelStars(int levelNumber, int stars)
     {
         levelStars[levelNumber] = stars;
-        PlayerPrefs.SetInt($"Level{levelNumber}Stars", stars);
+        PlayerPrefs.SetInt(StarsKey(levelNumber), stars);
         PlayerPrefs.Save();
-
-        Debug.Log($"Level {levelNumber} completed with {stars} stars!");
+        Debug.Log($"'{CurrentPlayer}' — Level {levelNumber} completed with {stars} stars!");
     }
 
     public static int GetLevelStars(int levelNumber)
     {
         if (levelStars.ContainsKey(levelNumber))
-        {
             return levelStars[levelNumber];
-        }
-        return PlayerPrefs.GetInt($"Level{levelNumber}Stars", 0);
+        return PlayerPrefs.GetInt(StarsKey(levelNumber), 0);
     }
 
     public static void SetLevelBestScore(int levelNumber, int score)
     {
         int currentBest = GetLevelBestScore(levelNumber);
-
         if (score > currentBest)
         {
             levelBestScores[levelNumber] = score;
-            PlayerPrefs.SetInt($"Level{levelNumber}BestScore", score);
+            PlayerPrefs.SetInt(BestScoreKey(levelNumber), score);
             PlayerPrefs.Save();
-
-            Debug.Log($"New best score for Level {levelNumber}: {score}");
+            Debug.Log($"'{CurrentPlayer}' — New best score for Level {levelNumber}: {score}");
         }
     }
 
     public static int GetLevelBestScore(int levelNumber)
     {
         if (levelBestScores.ContainsKey(levelNumber))
-        {
             return levelBestScores[levelNumber];
-        }
-        return PlayerPrefs.GetInt($"Level{levelNumber}BestScore", 0);
+        return PlayerPrefs.GetInt(BestScoreKey(levelNumber), 0);
     }
 
     public static void ResetProgress()
@@ -119,16 +111,13 @@ public class LevelSelectionManager : MonoBehaviour
         levelStars.Clear();
         levelBestScores.Clear();
 
-        PlayerPrefs.SetInt(UNLOCKED_LEVELS_KEY, 1);
-
-        // Clear all level data
-        for (int i = 1; i <= 100; i++) // Clear up to 100 levels
+        PlayerPrefs.SetInt(UnlockedKey, 1);
+        for (int i = 1; i <= 100; i++)
         {
-            PlayerPrefs.DeleteKey($"Level{i}Stars");
-            PlayerPrefs.DeleteKey($"Level{i}BestScore");
+            PlayerPrefs.DeleteKey(StarsKey(i));
+            PlayerPrefs.DeleteKey(BestScoreKey(i));
         }
-
         PlayerPrefs.Save();
-        Debug.Log("Level selection progress reset!");
+        Debug.Log($"'{CurrentPlayer}' progress reset!");
     }
 }
