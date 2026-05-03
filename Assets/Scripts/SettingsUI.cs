@@ -98,10 +98,6 @@ public class SettingsUI : MonoBehaviour
         musicBtnImage = mRT.gameObject.AddComponent<Image>();
         musicBtnImage.color = C_BTN_ON;
         musicToggleBtn = mRT.gameObject.AddComponent<Button>();
-        // Use None navigation mode so ColorBlock doesn't fight with our colour
-        var mNav = new Navigation { mode = Navigation.Mode.None };
-        musicToggleBtn.navigation = mNav;
-        // Transparent ColorBlock so button highlight doesn't override Image color
         SetTransparentColorBlock(musicToggleBtn);
         musicBtnLabel = PutText(mRT, "Lbl", "MUSIC  ON",
             0f, 0f, iw, 56f, 20f, C_TEXT, FontStyles.Bold, TextAlignmentOptions.Center);
@@ -115,8 +111,6 @@ public class SettingsUI : MonoBehaviour
         sfxBtnImage = sRT.gameObject.AddComponent<Image>();
         sfxBtnImage.color = C_BTN_ON;
         sfxToggleBtn = sRT.gameObject.AddComponent<Button>();
-        var sNav = new Navigation { mode = Navigation.Mode.None };
-        sfxToggleBtn.navigation = sNav;
         SetTransparentColorBlock(sfxToggleBtn);
         sfxBtnLabel = PutText(sRT, "Lbl", "SOUND EFFECTS  ON",
             0f, 0f, iw, 56f, 20f, C_TEXT, FontStyles.Bold, TextAlignmentOptions.Center);
@@ -134,6 +128,27 @@ public class SettingsUI : MonoBehaviour
             0f, 0f, iw, 40f, 16f, C_TEXT, FontStyles.Bold, TextAlignmentOptions.Center);
         closeBtn.onClick.AddListener(Close);
         cRT.gameObject.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.5f);
+
+        // Wire explicit navigation AFTER all three buttons exist
+        // D-pad up/down: music → sfx → close → music (wraps)
+        musicToggleBtn.navigation = new Navigation
+        {
+            mode = Navigation.Mode.Explicit,
+            selectOnUp = closeBtn,
+            selectOnDown = sfxToggleBtn,
+        };
+        sfxToggleBtn.navigation = new Navigation
+        {
+            mode = Navigation.Mode.Explicit,
+            selectOnUp = musicToggleBtn,
+            selectOnDown = closeBtn,
+        };
+        closeBtn.navigation = new Navigation
+        {
+            mode = Navigation.Mode.Explicit,
+            selectOnUp = sfxToggleBtn,
+            selectOnDown = musicToggleBtn,
+        };
     }
 
     // ── Open / Close ──────────────────────────────────────────────────────
@@ -152,10 +167,25 @@ public class SettingsUI : MonoBehaviour
     public void Close()
     {
         Debug.Log("SettingsUI: Close()");
-        Time.timeScale = 1f;
+
         HideImmediate();
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
+
+        Time.timeScale = 1f;
+        HideImmediate();
+
+        StartCoroutine(CloseAfterDelay());
+    }
+
+    private IEnumerator CloseAfterDelay()
+    {
+        // 0.3s — enough for controller button release before reselecting settings button
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        // Re-select the settings button so controller navigation resumes on the main menu
+        if (settingsButton != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(settingsButton.gameObject);
     }
 
     private void HideImmediate()

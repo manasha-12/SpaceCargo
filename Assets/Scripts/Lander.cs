@@ -78,14 +78,18 @@ public class Lander : MonoBehaviour
         currentHealth = maxHealth;
 
         landerRigidbody2D = GetComponent<Rigidbody2D>();
-        landerRigidbody2D.gravityScale = 0f;
-
         Instance = this;
 
         landerRigidbody2D.linearDamping = 0.5f;
         landerRigidbody2D.angularDamping = 2f;
         landerRigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
         landerRigidbody2D.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+        // Start fully frozen — Kinematic so nothing moves or triggers collisions
+        landerRigidbody2D.bodyType = RigidbodyType2D.Kinematic;
+        landerRigidbody2D.gravityScale = 0f;
+        landerRigidbody2D.linearVelocity = Vector2.zero;
+        landerRigidbody2D.angularVelocity = 0f;
     }
 
     private void FixedUpdate()
@@ -96,7 +100,7 @@ public class Lander : MonoBehaviour
         {
             default:
             case State.WaitingToStart:
-                // Also accept controller input (R2/Cross) to start
+                // Accept both keyboard and controller input to start
                 if (GameInput.Instance.IsUpActionPressed() ||
                     GameInput.Instance.IsLeftActionPressed() ||
                     GameInput.Instance.IsRightActionPressed() ||
@@ -104,7 +108,7 @@ public class Lander : MonoBehaviour
                     Keyboard.current.leftArrowKey.isPressed ||
                     Keyboard.current.rightArrowKey.isPressed)
                 {
-                    landerRigidbody2D.gravityScale = GRAVITY_NORAML;
+                    // SetState(Normal) calls UnfreezeRigidbody which restores Dynamic + gravity
                     SetState(State.Normal);
                 }
                 break;
@@ -312,7 +316,6 @@ public class Lander : MonoBehaviour
 
         Debug.Log("Successful Landing!");
 
-        // ↓↓ ACHIEVEMENT HOOK: notify landing pad (tracks "first pad" achievement)
         landingPad.OnLanderLanded();
 
         float maxScoreAmountLandingAngle = 100;
@@ -366,7 +369,6 @@ public class Lander : MonoBehaviour
             Debug.Log("Fuel collected! Adding: " + addFuelAmount
                       + " | New fuel total: " + fuelAmount);
 
-            // ↓↓ ACHIEVEMENT HOOK: notify achievement manager
             AchievementManager.Instance?.OnFuelPickedUp();
 
             fuelPickUp.destroySelf();
@@ -379,10 +381,51 @@ public class Lander : MonoBehaviour
         }
     }
 
+    // ── State machine ─────────────────────────────────────────────────────
     private void SetState(State state)
     {
         this.state = state;
+
+        switch (state)
+        {
+            case State.WaitingToStart:
+                FreezeRigidbody();
+                GameStateManager.SetGameInactive(); // pause all enemies
+                break;
+
+            case State.Normal:
+                UnfreezeRigidbody();
+                GameStateManager.SetGameActive();   // resume all enemies
+                break;
+
+            case State.GameOver:
+                FreezeRigidbody();
+                GameStateManager.SetGameInactive(); // pause all enemies after landing
+                // Disable colliders so nothing can hit the lander
+                foreach (var col in GetComponents<Collider2D>())
+                    col.enabled = false;
+                foreach (var col in GetComponentsInChildren<Collider2D>())
+                    col.enabled = false;
+                break;
+        }
+
         OnStateChange?.Invoke(this, new OnStateChangedEventAgrs { state = state });
+    }
+
+    private void FreezeRigidbody()
+    {
+        if (landerRigidbody2D == null) return;
+        landerRigidbody2D.gravityScale = 0f;
+        landerRigidbody2D.linearVelocity = Vector2.zero;
+        landerRigidbody2D.angularVelocity = 0f;
+        landerRigidbody2D.bodyType = RigidbodyType2D.Kinematic;
+    }
+
+    private void UnfreezeRigidbody()
+    {
+        if (landerRigidbody2D == null) return;
+        landerRigidbody2D.bodyType = RigidbodyType2D.Dynamic;
+        landerRigidbody2D.gravityScale = GRAVITY_NORAML;
     }
 
     private void ConsumeFuel()
