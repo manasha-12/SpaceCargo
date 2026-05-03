@@ -13,25 +13,56 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private GameObject newHighScoreLabel;
     [SerializeField] private LeaderboardUI leaderboardUI;
 
+    private bool isTransitioning = false;
+
     private void Awake()
     {
+        // Disable submit immediately on scene arrival — prevents held Cross firing on buttons
+        if (GameInput.Instance != null)
+            GameInput.Instance.DisableSubmitAction();
+
         mainMenuButton.onClick.AddListener(() =>
         {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(null);
-            SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+            if (GameInput.Instance != null)
+                GameInput.Instance.DisableSubmitAction();
+
+            StartCoroutine(LoadMainMenuAfterDelay());
         });
 
         if (flyAgainButton != null)
         {
             flyAgainButton.onClick.AddListener(() =>
             {
+                if (isTransitioning) return;
+                isTransitioning = true;
+
                 if (EventSystem.current != null)
                     EventSystem.current.SetSelectedGameObject(null);
-                GameManager.ResetStaticData();
-                SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+                if (GameInput.Instance != null)
+                    GameInput.Instance.DisableSubmitAction();
+
+                StartCoroutine(LoadGameAfterDelay());
             });
         }
+    }
+
+    private IEnumerator LoadMainMenuAfterDelay()
+    {
+        // 0.4s — longer than editor to account for build input latency
+        yield return new WaitForSecondsRealtime(0.4f);
+        SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+    }
+
+    private IEnumerator LoadGameAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.4f);
+        GameManager.ResetStaticData();
+        SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 
     private void Start()
@@ -46,7 +77,6 @@ public class GameOverUI : MonoBehaviour
                 scoreTextMesh.text = "FINAL SCORE: 0";
             if (highScoreTextMesh != null)
                 highScoreTextMesh.text = "HIGH SCORE: " + PlayerPrefs.GetInt("HighScore", 0);
-
             if (leaderboardUI != null)
                 leaderboardUI.Show();
 
@@ -74,13 +104,10 @@ public class GameOverUI : MonoBehaviour
 
         if (scoreTextMesh != null)
             scoreTextMesh.text = "FINAL SCORE: " + finalScore.ToString();
-
         if (highScoreTextMesh != null)
             highScoreTextMesh.text = "HIGH SCORE: " + highScore.ToString();
-
         if (newHighScoreLabel != null)
             newHighScoreLabel.SetActive(isNewHighScore);
-
         if (leaderboardUI != null)
             leaderboardUI.DisplayLeaderboard();
 
@@ -89,7 +116,16 @@ public class GameOverUI : MonoBehaviour
 
     private IEnumerator SelectDefaultButton()
     {
-        yield return new WaitForSecondsRealtime(0.3f);
+        // Deselect immediately on arrival
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
+        // 0.5s — enough for controller button release in both editor and builds
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        if (GameInput.Instance != null)
+            GameInput.Instance.EnableSubmitAction();
+
         Button toSelect = flyAgainButton != null ? flyAgainButton : mainMenuButton;
         if (EventSystem.current != null && toSelect != null)
             EventSystem.current.SetSelectedGameObject(toSelect.gameObject);

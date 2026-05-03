@@ -23,6 +23,10 @@ public class SettingsUI : MonoBehaviour
 
     private bool isTransitioning = false;
 
+    // Per-toggle cooldown — prevents double-fire from controller press+release
+    private bool musicOnCooldown = false;
+    private bool sfxOnCooldown = false;
+
     static readonly Color C_PANEL = new Color(0.04f, 0.08f, 0.18f, 0.97f);
     static readonly Color C_BORDER = new Color(0.25f, 0.55f, 1.00f, 0.90f);
     static readonly Color C_SHADOW = new Color(0.00f, 0.00f, 0.00f, 0.65f);
@@ -56,7 +60,6 @@ public class SettingsUI : MonoBehaviour
         var crt = targetCanvas.GetComponent<RectTransform>();
         const float PW = 400f, PH = 270f;
 
-        // Root wrapper — single SetActive hides everything
         settingsRoot = new GameObject("SettingsRoot");
         settingsRoot.transform.SetParent(crt, false);
         var rootRT = settingsRoot.AddComponent<RectTransform>();
@@ -66,15 +69,11 @@ public class SettingsUI : MonoBehaviour
         rootRT.anchoredPosition = Vector2.zero;
         panelCG = settingsRoot.AddComponent<CanvasGroup>();
 
-        // Shadow
         MakeBG("Shadow", settingsRoot.transform,
             new Vector2(PW + 14f, PH + 14f), new Vector2(8f, -8f), C_SHADOW);
-
-        // Border
         MakeBG("Border", settingsRoot.transform,
             new Vector2(PW + 4f, PH + 4f), Vector2.zero, C_BORDER);
 
-        // Panel body
         var panelGO = MakeBG("Panel", settingsRoot.transform,
             new Vector2(PW, PH), Vector2.zero, C_PANEL);
         var panelRT = panelGO.GetComponent<RectTransform>();
@@ -82,12 +81,10 @@ public class SettingsUI : MonoBehaviour
         float iw = PW - 40f;
         float cy = 22f;
 
-        // Title
         PutText(panelRT, "Title", "SETTINGS",
             20f, cy, iw, 36f, 26f, C_GOLD, FontStyles.Bold, TextAlignmentOptions.Center);
         cy += 46f;
 
-        // Divider
         var div = NewRT("Div", panelRT);
         SetRect(div, 20f, cy, iw, 1f);
         div.gameObject.AddComponent<Image>().color = new Color(0.3f, 0.6f, 1f, 0.4f);
@@ -130,7 +127,6 @@ public class SettingsUI : MonoBehaviour
         closeBtn.onClick.AddListener(Close);
         cRT.gameObject.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.5f);
 
-        // Explicit navigation — set after all buttons exist
         musicToggleBtn.navigation = new Navigation
         {
             mode = Navigation.Mode.Explicit,
@@ -159,7 +155,6 @@ public class SettingsUI : MonoBehaviour
         if (isTransitioning) return;
         isTransitioning = true;
 
-        // Deselect immediately so held Cross doesn't fire a button inside the panel
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
 
@@ -175,9 +170,10 @@ public class SettingsUI : MonoBehaviour
 
     private IEnumerator OpenAfterDelay()
     {
-        // 0.3s — enough for controller button release before selecting first button
         yield return new WaitForSecondsRealtime(0.3f);
         isTransitioning = false;
+        musicOnCooldown = false;
+        sfxOnCooldown = false;
         if (musicToggleBtn != null && EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(musicToggleBtn.gameObject);
     }
@@ -187,17 +183,14 @@ public class SettingsUI : MonoBehaviour
         if (isTransitioning) return;
         isTransitioning = true;
 
-        // Deselect immediately
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
 
         Time.timeScale = 1f;
         HideImmediate();
-
         StartCoroutine(CloseAfterDelay());
     }
 
-    // Called during scene transitions — no timeScale reset, no delay, no reselect
     public void CloseImmediate()
     {
         isTransitioning = false;
@@ -206,11 +199,8 @@ public class SettingsUI : MonoBehaviour
 
     private IEnumerator CloseAfterDelay()
     {
-        // 0.3s — enough for controller button release before reselecting settings button
         yield return new WaitForSecondsRealtime(0.3f);
         isTransitioning = false;
-
-        // Re-select the settings button so controller navigation resumes on the main menu
         if (settingsButton != null && EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(settingsButton.gameObject);
     }
@@ -227,22 +217,43 @@ public class SettingsUI : MonoBehaviour
     }
 
     // ═════════════════════════════════════════════════════════════════════
-    //  TOGGLE HANDLERS — isTransitioning prevents double-fire
+    //  TOGGLE HANDLERS
+    //  Each toggle has its own cooldown flag so a controller press+release
+    //  (which fires onClick twice) only counts as one toggle.
     // ═════════════════════════════════════════════════════════════════════
     private void OnMusicToggle()
     {
-        if (isTransitioning) return;
+        if (isTransitioning || musicOnCooldown) return;
         if (AudioManager.Instance == null) return;
+
+        musicOnCooldown = true;
         AudioManager.Instance.ToggleMusic();
         UpdateButtonVisuals();
+        StartCoroutine(ResetMusicCooldown());
+    }
+
+    private IEnumerator ResetMusicCooldown()
+    {
+        // 0.4s cooldown — longer than a controller press+release cycle (~0.1-0.2s)
+        yield return new WaitForSecondsRealtime(0.4f);
+        musicOnCooldown = false;
     }
 
     private void OnSFXToggle()
     {
-        if (isTransitioning) return;
+        if (isTransitioning || sfxOnCooldown) return;
         if (AudioManager.Instance == null) return;
+
+        sfxOnCooldown = true;
         AudioManager.Instance.ToggleSFX();
         UpdateButtonVisuals();
+        StartCoroutine(ResetSFXCooldown());
+    }
+
+    private IEnumerator ResetSFXCooldown()
+    {
+        yield return new WaitForSecondsRealtime(0.4f);
+        sfxOnCooldown = false;
     }
 
     // ═════════════════════════════════════════════════════════════════════

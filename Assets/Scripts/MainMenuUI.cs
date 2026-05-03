@@ -37,7 +37,6 @@ public class MainMenuUI : MonoBehaviour
             Application.Quit();
         });
 
-        // Fixed: proper lambda syntax, no broken URL
         if (leadersButton != null && leaderboardUI != null)
             leadersButton.onClick.AddListener(() => leaderboardUI.Show());
     }
@@ -61,7 +60,10 @@ public class MainMenuUI : MonoBehaviour
 
     private IEnumerator SelectAfterDelay()
     {
-        yield return new WaitForSecondsRealtime(0.3f);
+        // 0.5s — longer than 0.3s to prevent input bleed in builds
+        // In builds, scene loading takes extra frames so the controller
+        // button can still be "held" when the new scene's EventSystem initialises
+        yield return new WaitForSecondsRealtime(0.5f);
 
         if (GameInput.Instance != null)
             GameInput.Instance.EnableSubmitAction();
