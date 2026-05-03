@@ -36,6 +36,11 @@ public class PausedUI : MonoBehaviour
                 if (GameInput.Instance != null)
                     GameInput.Instance.DisableSubmitAction();
 
+                // Clean up all overlay UIs before leaving the scene
+                AchievementUI.Instance?.HidePostLanding();
+                AchievementUI.Instance?.HidePreLevel();
+                SettingsUI.Instance?.CloseImmediate();
+
                 GameStateManager.SetGameInactive();
                 Time.timeScale = 1f;
 
@@ -70,14 +75,12 @@ public class PausedUI : MonoBehaviour
 
     private void GameManager_OnGamePaused(object sender, System.EventArgs e)
     {
-        // Freeze all enemies when paused
         GameStateManager.SetGameInactive();
         Show();
     }
 
     private void GameManager_OnGameUnPaused(object sender, System.EventArgs e)
     {
-        // Resume all enemies when unpaused
         GameStateManager.SetGameActive();
         Hide();
     }

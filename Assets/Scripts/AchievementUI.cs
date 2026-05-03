@@ -38,6 +38,13 @@ public class AchievementUI : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        // Clean up dynamically created panel when scene unloads
+        HidePostLanding();
+        Instance = null;
+    }
+
     // ── Pre-Level ─────────────────────────────────────────────────────────
     public void ShowPreLevelAchievements(int levelNumber, System.Action onDismiss)
     {

@@ -14,7 +14,6 @@ public class SettingsUI : MonoBehaviour
     private GameObject settingsRoot;
     private CanvasGroup panelCG;
 
-    // Keep Image refs directly — don't rely on Button ColorBlock for colour changes
     private Image musicBtnImage;
     private Image sfxBtnImage;
     private TextMeshProUGUI musicBtnLabel;
@@ -22,13 +21,15 @@ public class SettingsUI : MonoBehaviour
     private Button musicToggleBtn;
     private Button sfxToggleBtn;
 
+    private bool isTransitioning = false;
+
     static readonly Color C_PANEL = new Color(0.04f, 0.08f, 0.18f, 0.97f);
     static readonly Color C_BORDER = new Color(0.25f, 0.55f, 1.00f, 0.90f);
     static readonly Color C_SHADOW = new Color(0.00f, 0.00f, 0.00f, 0.65f);
     static readonly Color C_GOLD = new Color(1.00f, 0.82f, 0.22f, 1f);
     static readonly Color C_TEXT = new Color(0.95f, 0.97f, 1.00f, 1f);
-    static readonly Color C_BTN_ON = new Color(0.10f, 0.48f, 0.15f, 1f); // green
-    static readonly Color C_BTN_OFF = new Color(0.55f, 0.10f, 0.10f, 1f); // red
+    static readonly Color C_BTN_ON = new Color(0.10f, 0.48f, 0.15f, 1f);
+    static readonly Color C_BTN_OFF = new Color(0.55f, 0.10f, 0.10f, 1f);
     static readonly Color C_CLOSE = new Color(0.20f, 0.20f, 0.30f, 1f);
 
     private void Awake()
@@ -44,7 +45,7 @@ public class SettingsUI : MonoBehaviour
     private void Start()
     {
         HideImmediate();
-        UpdateButtonVisuals(); // set correct colours on first frame
+        UpdateButtonVisuals();
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -55,7 +56,7 @@ public class SettingsUI : MonoBehaviour
         var crt = targetCanvas.GetComponent<RectTransform>();
         const float PW = 400f, PH = 270f;
 
-        // Root wrapper
+        // Root wrapper — single SetActive hides everything
         settingsRoot = new GameObject("SettingsRoot");
         settingsRoot.transform.SetParent(crt, false);
         var rootRT = settingsRoot.AddComponent<RectTransform>();
@@ -66,15 +67,15 @@ public class SettingsUI : MonoBehaviour
         panelCG = settingsRoot.AddComponent<CanvasGroup>();
 
         // Shadow
-        MakeBackground("Shadow", settingsRoot.transform,
+        MakeBG("Shadow", settingsRoot.transform,
             new Vector2(PW + 14f, PH + 14f), new Vector2(8f, -8f), C_SHADOW);
 
         // Border
-        MakeBackground("Border", settingsRoot.transform,
+        MakeBG("Border", settingsRoot.transform,
             new Vector2(PW + 4f, PH + 4f), Vector2.zero, C_BORDER);
 
         // Panel body
-        var panelGO = MakeBackground("Panel", settingsRoot.transform,
+        var panelGO = MakeBG("Panel", settingsRoot.transform,
             new Vector2(PW, PH), Vector2.zero, C_PANEL);
         var panelRT = panelGO.GetComponent<RectTransform>();
 
@@ -129,8 +130,7 @@ public class SettingsUI : MonoBehaviour
         closeBtn.onClick.AddListener(Close);
         cRT.gameObject.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.5f);
 
-        // Wire explicit navigation AFTER all three buttons exist
-        // D-pad up/down: music → sfx → close → music (wraps)
+        // Explicit navigation — set after all buttons exist
         musicToggleBtn.navigation = new Navigation
         {
             mode = Navigation.Mode.Explicit,
@@ -151,24 +151,43 @@ public class SettingsUI : MonoBehaviour
         };
     }
 
-    // ── Open / Close ──────────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════
+    //  OPEN / CLOSE
+    // ═════════════════════════════════════════════════════════════════════
     public void Open()
     {
-        Debug.Log("SettingsUI: Open()");
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        // Deselect immediately so held Cross doesn't fire a button inside the panel
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+
         Time.timeScale = 0f;
         settingsRoot.SetActive(true);
         panelCG.alpha = 1f;
         panelCG.interactable = true;
         panelCG.blocksRaycasts = true;
         UpdateButtonVisuals();
-        StartCoroutine(SelectFirst());
+
+        StartCoroutine(OpenAfterDelay());
+    }
+
+    private IEnumerator OpenAfterDelay()
+    {
+        // 0.3s — enough for controller button release before selecting first button
+        yield return new WaitForSecondsRealtime(0.3f);
+        isTransitioning = false;
+        if (musicToggleBtn != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(musicToggleBtn.gameObject);
     }
 
     public void Close()
     {
-        Debug.Log("SettingsUI: Close()");
+        if (isTransitioning) return;
+        isTransitioning = true;
 
-        HideImmediate();
+        // Deselect immediately
         if (EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(null);
 
@@ -178,10 +197,18 @@ public class SettingsUI : MonoBehaviour
         StartCoroutine(CloseAfterDelay());
     }
 
+    // Called during scene transitions — no timeScale reset, no delay, no reselect
+    public void CloseImmediate()
+    {
+        isTransitioning = false;
+        HideImmediate();
+    }
+
     private IEnumerator CloseAfterDelay()
     {
         // 0.3s — enough for controller button release before reselecting settings button
         yield return new WaitForSecondsRealtime(0.3f);
+        isTransitioning = false;
 
         // Re-select the settings button so controller navigation resumes on the main menu
         if (settingsButton != null && EventSystem.current != null)
@@ -199,39 +226,28 @@ public class SettingsUI : MonoBehaviour
         }
     }
 
-    private IEnumerator SelectFirst()
-    {
-        yield return new WaitForSecondsRealtime(0.1f);
-        if (musicToggleBtn != null && EventSystem.current != null)
-            EventSystem.current.SetSelectedGameObject(musicToggleBtn.gameObject);
-    }
-
-    // ── Toggle handlers ───────────────────────────────────────────────────
+    // ═════════════════════════════════════════════════════════════════════
+    //  TOGGLE HANDLERS — isTransitioning prevents double-fire
+    // ═════════════════════════════════════════════════════════════════════
     private void OnMusicToggle()
     {
-        Debug.Log("SettingsUI: Music button clicked");
-        if (AudioManager.Instance == null)
-        {
-            Debug.LogWarning("SettingsUI: AudioManager.Instance is NULL!");
-            return;
-        }
+        if (isTransitioning) return;
+        if (AudioManager.Instance == null) return;
         AudioManager.Instance.ToggleMusic();
         UpdateButtonVisuals();
     }
 
     private void OnSFXToggle()
     {
-        Debug.Log("SettingsUI: SFX button clicked");
-        if (AudioManager.Instance == null)
-        {
-            Debug.LogWarning("SettingsUI: AudioManager.Instance is NULL!");
-            return;
-        }
+        if (isTransitioning) return;
+        if (AudioManager.Instance == null) return;
         AudioManager.Instance.ToggleSFX();
         UpdateButtonVisuals();
     }
 
-    // ── Update visuals to reflect current state ───────────────────────────
+    // ═════════════════════════════════════════════════════════════════════
+    //  VISUALS
+    // ═════════════════════════════════════════════════════════════════════
     private void UpdateButtonVisuals()
     {
         if (AudioManager.Instance == null) return;
@@ -239,18 +255,17 @@ public class SettingsUI : MonoBehaviour
         bool music = AudioManager.Instance.MusicEnabled;
         bool sfx = AudioManager.Instance.SFXEnabled;
 
-        Debug.Log($"SettingsUI: UpdateButtonVisuals — Music={music}, SFX={sfx}");
-
         if (musicBtnImage != null) musicBtnImage.color = music ? C_BTN_ON : C_BTN_OFF;
         if (sfxBtnImage != null) sfxBtnImage.color = sfx ? C_BTN_ON : C_BTN_OFF;
-
         if (musicBtnLabel != null) musicBtnLabel.text = music ? "MUSIC  ON" : "MUSIC  OFF";
         if (sfxBtnLabel != null) sfxBtnLabel.text = sfx ? "SOUND EFFECTS  ON" : "SOUND EFFECTS  OFF";
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
-    private static GameObject MakeBackground(string name, Transform parent,
-        Vector2 size, Vector2 offset, Color color)
+    // ═════════════════════════════════════════════════════════════════════
+    //  HELPERS
+    // ═════════════════════════════════════════════════════════════════════
+    private static GameObject MakeBG(string name, Transform parent, Vector2 size,
+        Vector2 offset, Color color)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -299,7 +314,6 @@ public class SettingsUI : MonoBehaviour
         return tmp;
     }
 
-    // Use a transparent ColorBlock so Unity's Button doesn't override our Image color
     private static void SetTransparentColorBlock(Button btn)
     {
         var cb = btn.colors;
@@ -307,7 +321,6 @@ public class SettingsUI : MonoBehaviour
         cb.highlightedColor = new Color(1f, 1f, 1f, 0.85f);
         cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
         cb.selectedColor = new Color(1f, 1f, 1f, 0.9f);
-        cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
         cb.colorMultiplier = 1f;
         cb.fadeDuration = 0.05f;
         btn.colors = cb;
