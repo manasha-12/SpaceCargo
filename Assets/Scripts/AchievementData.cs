@@ -35,9 +35,20 @@ public class LevelAchievements
     public List<Achievement> achievements = new List<Achievement>();
 }
 
+// Stores stars per individual player by name
+[Serializable]
+public class PlayerStarEntry
+{
+    public string playerName;
+    public int stars;
+}
+
 [Serializable]
 public class AchievementSaveData
 {
     public List<LevelAchievements> levelAchievements = new List<LevelAchievements>();
+    public List<PlayerStarEntry> playerStars = new List<PlayerStarEntry>();
+
+    // Legacy field kept for JSON migration — no longer written to
     public int totalStars;
 }
