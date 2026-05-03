@@ -182,7 +182,7 @@ MonoBehaviour:
   pressedScale: 0.94
   scaleSpeed: 12
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
-  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
 --- !u!114 &52375069
 MonoBehaviour:
@@ -266,6 +266,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 52375066}
   m_CullTransparentMesh: 1
+--- !u!1 &71434489
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 71434491}
+  - component: {fileID: 71434490}
+  m_Layer: 0
+  m_Name: SettingUIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &71434490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 71434489}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33c1ee9a06d668744bd1f59dd835a06b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settingsButton: {fileID: 52375069}
+  targetCanvas: {fileID: 1736062534}
+--- !u!4 &71434491
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 71434489}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 840.8599, y: 615.22955, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &286467849
 GameObject:
   m_ObjectHideFlags: 0
@@ -922,6 +968,60 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1058584349}
   m_CullTransparentMesh: 1
+--- !u!1 &1376237433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1376237435}
+  - component: {fileID: 1376237434}
+  m_Layer: 0
+  m_Name: AudioManagerObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1376237434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376237433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c90c86c2574c3442b8ece96c69dffd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  musicClip: {fileID: 8300000, guid: db7efd9f94a5d1e45bb8f5e1c60a7ba1, type: 3}
+  musicVolume: 0.363
+  sfxCrash: {fileID: 8300000, guid: 4c9f9d63f11fa4d4ca1c537cd058256d, type: 3}
+  sfxFuelPickup: {fileID: 8300000, guid: fbd9c5bf252a6c14b9bb3a84dba2510c, type: 3}
+  sfxCoinPickup: {fileID: 8300000, guid: 4286836a473df634692d7fc2988b47bd, type: 3}
+  sfxLandingSuccess: {fileID: 8300000, guid: 6d68f74438f613b45b2181d4e917474c, type: 3}
+  sfxThruster: {fileID: 8300000, guid: 484dfe2ec7cb08047b216f2dd52796d5, type: 3}
+  sfxButtonClick: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
+  sfxButtonHover: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
+  sfxVolume: 0.887
+--- !u!4 &1376237435
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376237433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 840.8599, y: 615.22955, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1549050075
 GameObject:
   m_ObjectHideFlags: 0
@@ -1306,7 +1406,7 @@ MonoBehaviour:
   pressedScale: 0.94
   scaleSpeed: 12
   hoverSound: {fileID: 8300000, guid: 10cbe7a82068f794cb4e41f24eb6f456, type: 3}
-  clickSound: {fileID: 8300000, guid: 354723696e45497419a4954477b7e6f8, type: 3}
+  clickSound: {fileID: 8300000, guid: ab7ac101cd73d2c40bc5aa0a62d77e95, type: 3}
   soundVolume: 0.7
 --- !u!1 &1672459080
 GameObject:
@@ -2117,3 +2217,5 @@ SceneRoots:
   - {fileID: 1579132414}
   - {fileID: 1736062535}
   - {fileID: 1894964891}
+  - {fileID: 71434491}
+  - {fileID: 1376237435}

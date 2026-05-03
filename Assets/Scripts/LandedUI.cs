@@ -13,16 +13,28 @@ public class LandedUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI nextButtonTextMesh;
     [SerializeField] private Button nextButton;
 
+    [Tooltip("Optional retry button — shown only on successful landing")]
+    [SerializeField] private Button retryButton;
+
     private Action nextButtonClickAction;
 
     private void Awake()
     {
         nextButton.onClick.AddListener(() =>
         {
-            // Hide achievement panel at same time as proceeding
             AchievementUI.Instance?.HidePostLanding();
             nextButtonClickAction?.Invoke();
         });
+
+        // Retry always retries the current level
+        if (retryButton != null)
+        {
+            retryButton.onClick.AddListener(() =>
+            {
+                AchievementUI.Instance?.HidePostLanding();
+                GameManager.Instance.RetryCurrentLevel();
+            });
+        }
     }
 
     private void Start()
@@ -40,25 +52,25 @@ public class LandedUI : MonoBehaviour
             nextButtonClickAction = GameManager.Instance.GoToNextLevel;
             SetStats(e);
 
+            // Show retry button on success so player can retry for achievements
+            if (retryButton != null) retryButton.gameObject.SetActive(true);
+
             if (AchievementManager.Instance != null && GameManager.Instance != null)
             {
                 int level = GameManager.Instance.GetLevelNumber();
                 bool fullHealth = Lander.Instance.GetCurrentHealth()
                                >= Lander.Instance.GetMaxHealth();
 
-                // Evaluate — marks which achievements were completed this run
                 AchievementManager.Instance.EvaluateAchievements(
                     level, e.landingSpeed, e.score, fullHealth);
 
-                // Get ALL achievements for this level (completed + not completed)
-                // so the UI always shows the full list regardless of what was achieved
                 List<Achievement> allAchievements =
                     AchievementManager.Instance.GetAchievementsForLevel(level);
 
                 if (AchievementUI.Instance != null)
                 {
                     AchievementUI.Instance.ShowPostLandingAchievements(
-                        allAchievements,          // full list — always 3
+                        allAchievements,
                         AchievementManager.Instance.GetTotalStars(),
                         () =>
                         {
@@ -90,6 +102,9 @@ public class LandedUI : MonoBehaviour
                 nextButtonTextMesh.text = "FLY AGAIN";
                 nextButtonClickAction = GameManager.Instance.RetryCurrentLevel;
             }
+
+            // Hide retry button on crash/game over
+            if (retryButton != null) retryButton.gameObject.SetActive(false);
 
             SetStats(e);
             Show();

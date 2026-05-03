@@ -12,6 +12,7 @@ public class FuelPickUp : MonoBehaviour
     public void destroySelf()
     {
         AchievementManager.Instance?.OnFuelPickedUp();
+        AudioManager.Instance?.PlayFuelPickup();
         Destroy(gameObject);
     }
 }
