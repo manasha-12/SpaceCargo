@@ -1,213 +1,421 @@
-# 🚀 Space Cargo - Lunar Lander Game
+# 🚀 SpaceCargo
 
-A physics-based 2D space lander game built with Unity, where players must carefully navigate and land their spacecraft on designated landing pads while managing fuel and avoiding crashes.
+> A physics-based 2D space lander game built with Unity 6. Pilot your rocket through hazardous terrain, manage fuel and health, collect coins, defeat enemies, and land precisely on designated pads — all with full PlayStation controller support and per-player profile management.
 
-![Unity Version](https://img.shields.io/badge/Unity-6.0-blue)
-![C#](https://img.shields.io/badge/C%23-Latest-green)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-lightgrey)
+![Unity](https://img.shields.io/badge/Unity-6000.1.x-blue?logo=unity)
+![C#](https://img.shields.io/badge/C%23-10.0-green?logo=csharp)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Input](https://img.shields.io/badge/Input-Keyboard%20%7C%20Mouse%20%7C%20PS%20Controller-orange)
 
-## 🎮 Game Overview
+---
 
-Space Cargo is a challenging lunar lander simulation game that tests your piloting skills. Navigate your spacecraft through treacherous terrain, manage your fuel consumption, and execute precision landings to score points.
+## 📋 Table of Contents
 
-### Key Features
+- [Overview](#-overview)
+- [Features](#-features)
+- [Scenes](#-scenes)
+- [Gameplay](#-gameplay)
+- [Controls](#-controls)
+- [Achievement System](#-achievement-system)
+- [Multi-Player Profiles](#-multi-player-profiles)
+- [Technical Architecture](#-technical-architecture)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Building the Game](#-building-the-game)
+- [Known Issues & Fixes](#-known-issues--fixes)
+- [Future Enhancements](#-future-enhancements)
+- [Author](#-author)
 
-- **Realistic Physics**: Smooth, physics-based movement with thrust and rotation mechanics
-- **Precision Landing System**: Score-based landing evaluation considering speed and angle
-- **Dynamic Particle Effects**: Visual feedback with thruster particle systems
-- **Multiple Landing Zones**: Various landing pads with different score multipliers
-- **Collision Detection**: Advanced collision system for realistic crash mechanics
+---
 
-## 🎯 Gameplay Mechanics
+## 🎮 Overview
 
-### Controls
+SpaceCargo is a complete production-ready 2D lander game developed in Unity 6. The game challenges players to pilot a cargo rocket through levels filled with asteroids, drones, coins, and fuel canisters — landing precisely on designated pads to score points and earn achievements.
 
-| Key | Action |
-|-----|--------|
-| `↑` (Up Arrow) | Main Thruster - Upward thrust |
-| `←` (Left Arrow) | Left Rotation - Rotate counterclockwise |
-| `→` (Right Arrow) | Right Rotation - Rotate clockwise |
+The project features a full multi-player profile system where each player on a shared device maintains completely separate progress: their own level unlocks, achievement stars, best scores, and leaderboard entries. No account or internet connection is required.
 
-### Landing Criteria
+---
 
-To achieve a successful landing, you must meet the following conditions:
+## ✨ Features
 
-1. **Landing Speed**: Relative velocity must be below `4.0` units
-2. **Landing Angle**: Spacecraft must be upright (within `10%` deviation from vertical)
-3. **Landing Target**: Must land on a designated landing pad
+| Feature | Description |
+|---|---|
+| Physics-based lander | Rigidbody2D with thrust, rotation, gravity, and a three-state freeze system |
+| Multi-player profiles | Per-player level unlocks, stars, achievements — fully isolated per player name |
+| Achievement system | 9 achievement types, 3 per level, evaluated after each successful landing |
+| Procedural levels | Levels 1–3 hand-crafted; Level 4+ procedurally generated with scaled difficulty |
+| Enemy AI | Asteroids (velocity-based) and drones (patrol AI) with pause/resume support |
+| Leaderboard | Top-5 persistent leaderboard with player name, score, and date |
+| Audio | Persistent background music + 7 SFX categories across all scenes |
+| PS Controller | Full D-pad navigation on all menus; input bleed prevention in builds |
+| Settings | Music and SFX toggles with per-button cooldown; preferences saved |
+| Cross-platform | Builds for Windows, macOS, and Linux from a single project |
 
-### Scoring System
+---
 
-Your score is calculated based on:
+## 🎬 Scenes
 
-- **Landing Angle Score** (0-100): Precision of your vertical alignment
-- **Landing Speed Score** (0-100): How gently you touch down
-- **Multiplier Bonus**: Each landing pad has a unique score multiplier (1x, 5x, etc.)
+The game uses six scenes managed by a central `SceneLoader`:
 
-**Formula:**
 ```
-Final Score = (Landing Angle Score + Landing Speed Score) × Landing Pad Multiplier
+MainMenuScene → PlayerNameScene → LevelSelectionScene
+                                         ↓
+                              GameScene ←→ GameOverScene
 ```
 
-## 🛠️ Technical Details
+| Scene | Purpose |
+|---|---|
+| `MainMenuScene` | Hub — Play, Shuttles, Leaderboard, Settings, Quit |
+| `PlayerNameScene` | Register new pilot or select existing profile |
+| `LanderSelectionScene` | Choose rocket skin (cosmetic only) |
+| `LevelSelectionScene` | Browse and select unlocked levels |
+| `GameScene` | Core gameplay — physics, enemies, achievements, HUD |
+| `GameOverScene` | Final score, high score, leaderboard display |
 
-### Built With
+---
 
-- **Engine**: Unity 6.0
-- **Language**: C#
-- **Physics**: Unity Physics2D
-- **Input System**: Unity Input System (New Input System)
+## 🕹️ Gameplay
 
-### Core Components
+### HUD Elements
+- **Score** — accumulated across levels in the session
+- **Time** — seconds since first input
+- **Speed X / Speed Y** — current lander velocity
+- **Fuel bar** — depletes on thrust; collect fuel canisters to replenish
+- **Hearts (×3)** — health points; one lost per non-fatal crash
 
-#### Lander.cs
-The main spacecraft controller handling:
-- Physics-based movement (thrust and rotation)
-- Collision detection and landing validation
-- Event system for visual feedback
-- Score calculation
+### Landing Requirements
+A successful landing requires **all three** conditions:
 
-#### LanderVisuals.cs
-Manages visual feedback:
-- Thruster particle system control
-- Event-driven particle activation
-- Left, right, and middle thruster states
+| Condition | Threshold |
+|---|---|
+| Contact speed | Below **4.0** units (watch Speed Y on HUD) |
+| Lander angle | Within **10 degrees** of vertical |
+| Contact surface | Designated **landing pad** only |
 
-#### LandingPad.cs
-Landing zone management:
-- Score multiplier configuration
-- Landing validation
+### Score Formula
+```
+Landing Angle Score  = 100 − |dotVector − 1| × 10 × 100
+Landing Speed Score  = (4.0 − relativeVelocity) × 100
+Final Score          = (Angle Score + Speed Score) × Pad Multiplier
+```
+Scores accumulate across all levels in a session.
+
+### Collectibles
+
+| Item | Effect |
+|---|---|
+| Coin | +500 score; counted for Coin Collector achievements |
+| Fuel Canister | Replenishes fuel bar; counts for Fuel Saver achievement |
+
+### Enemies
+
+| Enemy | Behaviour |
+|---|---|
+| Asteroid | Spawns above play area; velocity-based drift (no gravity); destroyable |
+| Drone | Patrols level; follows DroneAI script; destroyable with weapon |
+
+> **Note:** All enemies freeze before the player starts moving and after any landing. They also freeze when the game is paused. No pre-start or post-landing damage is possible.
+
+### Lander State Machine
+
+```
+WaitingToStart ──(first thrust)──► Normal ──(land/crash/fuel=0)──► GameOver
+     │                                                                   │
+  Kinematic                       Dynamic                           Kinematic
+  gravityScale=0               gravityScale=0.7                  Colliders OFF
+  Enemies frozen                Enemies active                    Enemies frozen
+```
+
+---
+
+## 🎮 Controls
+
+| Action | Keyboard | PS Controller |
+|---|---|---|
+| Thrust (up) | `↑` / `W` | `R2` |
+| Rotate left | `←` / `A` | D-pad `←` |
+| Rotate right | `→` / `D` | D-pad `→` |
+| Shoot | `Space` | `Square` |
+| Pause | `Escape` | `Options` |
+| Navigate menus | Arrow keys | D-pad `↑↓←→` |
+| Confirm / Select | `Enter` | `Cross` |
+
+> **PS Controller:** Connect via USB or Bluetooth before launching. Detected automatically on all platforms.
+
+---
+
+## 🏆 Achievement System
+
+Each level has **3 achievements**. Completing an achievement awards **1 star** to the current player only.
+
+| Achievement | Condition |
+|---|---|
+| Coin Collector | Pick up the specified number of coins |
+| Soft Touch | Land on the first landing pad in the level |
+| Speed Runner | Complete a successful landing within the time limit |
+| Feather Landing | Land with speed below the specified threshold |
+| Fuel Saver | Pick up at least one fuel canister |
+| Greedy Pilot | Collect every coin in the level |
+| Untouchable | Land with all 3 hearts intact (no crashes) |
+| High Flyer | Achieve a score above the specified threshold |
+| Drone Slayer | Destroy the specified number of drones |
+
+- **Levels 1–3:** Fixed hand-crafted achievement targets
+- **Levels 4+:** Procedurally generated targets scaled to difficulty
+
+Achievements are shown in the pre-level panel before the game starts, and evaluated in the post-landing panel after every successful landing.
+
+---
+
+## 👥 Multi-Player Profiles
+
+SpaceCargo supports multiple local player profiles on a single device. Each player's data is completely isolated:
+
+```
+PlayerPrefs key format:
+
+UnlockedLevels_Alice       ← level progress
+Level1Stars_Alice          ← star rating per level
+Level1BestScore_Alice      ← best score per level
+Ach_Alice_1_coins_1        ← achievement completion per level
+AchievementData            ← JSON blob with playerStars list
+```
+
+**Switching players:** Press Play → select your name from the existing player list. Stars, level unlocks, and achievements load immediately for the selected player.
+
+**Resetting data:** Unity Editor: `Edit → Clear All PlayerPrefs`. In a build, delete the platform-specific PlayerPrefs storage file.
+
+---
+
+## 🏗️ Technical Architecture
+
+### Persistent Singletons (DontDestroyOnLoad)
+
+| Class | Responsibility |
+|---|---|
+| `GameManager` | Session score, level progression, pause/unpause events |
+| `AudioManager` | Music + SFX playback, toggle persistence |
+| `AchievementManager` | Per-player achievement evaluation and star tracking |
+| `LeaderboardManager` | Player names, top-5 leaderboard data |
+| `LevelSelectionManager` | Per-player level unlock and score data |
+
+### Core Scripts
+
+| Script | Description |
+|---|---|
+| `Lander.cs` | Rigidbody2D physics, three-state machine, collision, fuel, health, shooting |
+| `EnemyPauser.cs` | Freezes/unfreezes enemies based on `GameStateManager.IsGameActive` |
+| `GameStateManager.cs` | Static class; `IsGameActive` bool shared by all enemy scripts |
+| `AsteroidSpawner.cs` | Spawns asteroids with velocity-based motion; respects game state |
+| `LevelSelectionUI.cs` | Generates level cards with per-player stars and scores |
+| `PlayerNameUI.cs` | Procedural registration and profile selection UI |
+| `SettingsUI.cs` | Procedural settings panel; 0.4s per-button toggle cooldown |
+| `AchievementUI.cs` | Pre-level panel (prefab) and post-landing panel (procedural) |
+| `PausedUI.cs` | Pause menu; hides achievement panel on pause |
+| `MainMenuUI.cs` | Main menu wiring; 0.5s submit delay on scene arrival |
+| `GameOverUI.cs` | Score display, leaderboard, input bleed prevention |
 
 ### Physics Configuration
 
-- **Linear Drag**: 0.5 (air resistance for movement)
-- **Angular Drag**: 2.0 (rotation damping)
-- **Thrust Force**: 8.0 units
-- **Rotation Torque**: 3.0 units
-- **Max Angular Velocity**: 200 units (prevents excessive spinning)
+| Parameter | Value |
+|---|---|
+| Linear Drag | 0.5 |
+| Angular Drag | 2.0 |
+| Thrust Force | 8.0 units |
+| Rotation Torque | 3.0 units |
+| Gravity Scale (active) | 0.7 |
+| Max Angular Velocity | 200 units |
+| Collision Detection | Continuous |
 
-## 📦 Project Structure
+### Input System
+
+Uses Unity's **New Input System (1.7.x)** with a single `InputActions` asset shared by gameplay and the UI `EventSystem`. Action maps:
+- `Player` — UpAction, LeftAction, RightAction, Shoot, Submit
+- `UI` — Navigate, Submit, Cancel
+
+Controller input bleed prevention: `DisableSubmitAction()` on every scene arrival + `0.5s WaitForSecondsRealtime` delay before re-enabling.
+
+---
+
+## 📁 Project Structure
+
 ```
 SpaceCargo/
 ├── Assets/
-│   ├── Scripts/
-│   │   ├── Lander.cs              # Main spacecraft controller
-│   │   ├── LanderVisuals.cs       # Visual effects manager
-│   │   └── LandingPad.cs          # Landing zone controller
+│   ├── Input/
+│   │   └── InputActions.inputactions   # Shared input asset
+│   ├── Prefabs/
+│   │   ├── Asteroid.prefab             # EnemyPauser + gravityScale=0
+│   │   ├── Drone.prefab                # EnemyPauser + DroneAI script
+│   │   ├── AchievementRowPrefab.prefab # Pre-level achievement row
+│   │   └── Landers/                   # Rocket skin prefabs
+│   ├── Resources/
+│   │   └── LevelPreviews/             # Level card thumbnail sprites
 │   ├── Scenes/
-│   │   └── SampleScene.unity      # Main game scene
-│   ├── Sprites/                   # Game sprites and textures
-│   ├── Prefabs/                   # Reusable game objects
-│   └── Materials/                 # Physics materials
-├── ProjectSettings/               # Unity project configuration
-└── Packages/                      # Package dependencies
+│   │   ├── MainMenuScene.unity
+│   │   ├── PlayerNameScene.unity
+│   │   ├── LanderSelectionScene.unity
+│   │   ├── LevelSelectionScene.unity
+│   │   ├── GameScene.unity
+│   │   └── GameOverScene.unity
+│   ├── Scripts/
+│   │   ├── AchievementData.cs
+│   │   ├── AchievementManager.cs
+│   │   ├── AchievementUI.cs
+│   │   ├── AsteroidSpawner.cs
+│   │   ├── AudioManager.cs
+│   │   ├── EnemyPauser.cs
+│   │   ├── GameManager.cs
+│   │   ├── GameOverUI.cs
+│   │   ├── GameStateManager.cs
+│   │   ├── Lander.cs
+│   │   ├── LandingPad.cs
+│   │   ├── LeaderboardManager.cs
+│   │   ├── LevelSelectionManager.cs
+│   │   ├── LevelSelectionUI.cs
+│   │   ├── MainMenuUI.cs
+│   │   ├── PausedUI.cs
+│   │   ├── PlayerNameUI.cs
+│   │   ├── SceneLoader.cs
+│   │   ├── SettingsUI.cs
+│   │   └── ...
+│   ├── Audio/                         # Music and SFX clips
+│   ├── Sprites/                       # Game sprites and textures
+│   └── Materials/                     # Physics and visual materials
+├── ProjectSettings/
+└── Packages/
+    └── manifest.json                  # Input System, TMP, Cinemachine
 ```
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Unity 6.0 or later
-- Visual Studio 2022 or JetBrains Rider (recommended)
-- Git
+- [Unity Hub](https://unity.com/download) with **Unity 6000.1.x** installed
+- Build modules: Windows, macOS, and Linux Build Support (IL2CPP)
+- Visual Studio 2022 or JetBrains Rider
+- Git 2.x
+- PS DualSense or DualShock 4 controller (optional)
 
 ### Installation
 
-1. **Clone the repository**
+**1. Clone the repository**
 ```bash
-   git clone https://github.com/manasha-12/SpaceCargo.git
+git clone https://github.com/manasha-12/SpaceCargo.git
+cd SpaceCargo
 ```
 
-2. **Open in Unity**
-   - Launch Unity Hub
-   - Click "Add" → "Add project from disk"
-   - Navigate to the cloned repository
-   - Select the project folder
+**2. Open in Unity Hub**
+- Launch Unity Hub
+- Click **Add → Add project from disk**
+- Navigate to the cloned folder and select it
+- Unity 6000.1.x will open and import all assets (allow 2–5 minutes on first open)
 
-3. **Open the Scene**
-   - Navigate to `Assets/Scenes/`
-   - Double-click `SampleScene.unity`
+**3. Configure Input System**
+- Go to **Edit → Project Settings → Player**
+- Under **Other Settings**, set **Active Input Handling** to **New Input System**
+- Click **Apply and Restart** when prompted
 
-4. **Play**
-   - Press the Play button in Unity Editor
-   - Use arrow keys to control the lander
+**4. Import TMP Resources**
+- If prompted, click **Import TMP Essentials**
 
-### Building the Game
+**5. Verify Build Settings**
+- Go to **File → Build Settings**
+- Confirm all six scenes are listed in this order:
 
-1. Go to `File` → `Build Settings`
-2. Select your target platform (PC, Mac, Linux)
-3. Click `Build` or `Build and Run`
+| Index | Scene |
+|---|---|
+| 0 | MainMenuScene |
+| 1 | PlayerNameScene |
+| 2 | LanderSelectionScene |
+| 3 | LevelSelectionScene |
+| 4 | GameScene |
+| 5 | GameOverScene |
 
-## 🎮 How to Play
+**6. Assign Audio Clips**
+- In `MainMenuScene`, select the **AudioManagerObject** in the Hierarchy
+- In the Inspector, assign audio clips to all `AudioManager` fields:
+  - Music Clip, Sfx Crash, Sfx Fuel Pickup, Sfx Coin Pickup
+  - Sfx Landing Success, Sfx Thruster, Sfx Button Click, Sfx Button Hover
 
-1. **Launch**: Start the game - your lander begins in space
-2. **Navigate**: Use arrow keys to control thrust and rotation
-3. **Approach**: Carefully descend toward a landing pad
-4. **Land**: Reduce speed and align vertically before touchdown
-5. **Score**: Check the console for your landing score and feedback
+**7. Play in Editor**
+- Open `MainMenuScene`
+- Press the **Play** button
+- Use arrow keys or PS controller to navigate
 
-### Tips for Success
+---
 
-- 🔥 **Conserve Momentum**: Small, controlled bursts are better than constant thrust
-- 📐 **Align Early**: Start rotating to vertical alignment while still high up
-- 🎯 **Reduce Speed**: Begin braking well before reaching the landing pad
-- ⚠️ **Watch the Terrain**: Avoid colliding with mountains and obstacles
+## 🏗️ Building the Game
 
-## 🐛 Known Issues
+```
+File → Build Settings → select platform → Switch Platform → Build
+```
 
-- Collision detection may trigger slightly before visual contact (collider optimization in progress)
+| Platform | Output |
+|---|---|
+| Windows | `SpaceCargo.exe` + `SpaceCargo_Data/` + `UnityPlayer.dll` |
+| macOS | `SpaceCargo.app` bundle |
+| Linux | `SpaceCargo.x86_64` + `SpaceCargo_Data/` |
+
+> Distribute the **entire output folder**, not just the executable. All supporting files are required.
+
+**Linux — first run:**
+```bash
+chmod +x SpaceCargo.x86_64
+./SpaceCargo.x86_64
+```
+
+**macOS — first run (Gatekeeper bypass):**
+Right-click `SpaceCargo.app` → **Open** → confirm in the dialog.
+Or: `System Settings → Privacy & Security → Open Anyway`
+
+---
+
+## 🐛 Known Issues & Fixes
+
+| Issue | Status | Fix Applied |
+|---|---|---|
+| Controller double-input on settings toggles | Fixed | 0.4s per-button cooldown in `SettingsUI.cs` |
+| Input bleed from Game Over to Main Menu (builds) | Fixed | 0.5s `WaitForSecondsRealtime` + `DisableSubmitAction()` on scene load |
+| Asteroids falling due to gravity instead of floating | Fixed | `gravityScale = 0` enforced on prefab and at each spawn in `AsteroidSpawner.cs` |
+| Enemies damaging lander before game starts | Fixed | `EnemyPauser` component freezes all enemies until first input |
+| Achievement panel visible behind Pause UI | Fixed | `PausedUI` calls `AchievementUI.SetPostLandingVisible(false)` on pause |
+| Stars shared across all players (old global key) | Fixed | All PlayerPrefs keys now include player name as suffix |
+| Lander taking damage after successful landing | Fixed | `SetState(GameOver)` disables all `Collider2D` components immediately |
+| Music not starting (AudioSource timing) | Fixed | Music starts in `Start()` not `Awake()` in `AudioManager.cs` |
+
+---
 
 ## 🔮 Future Enhancements
 
-- [ ] Fuel management system
-- [ ] Multiple levels with increasing difficulty
-- [ ] Sound effects and background music
-- [ ] Main menu and UI system
-- [ ] High score leaderboard
-- [ ] Mobile touch controls
-- [ ] Additional spacecraft models
-- [ ] Power-ups and collectibles
-
-## 📝 Development Log
-
-### Current Version: Alpha 0.1
-
-**Latest Updates:**
-- ✅ Implemented smooth physics-based controls
-- ✅ Added collision detection system
-- ✅ Created scoring algorithm
-- ✅ Integrated particle thruster effects
-- ✅ Fixed NullReferenceException on terrain collision
-
-## 🤝 Contributing
-
-Contributions are welcome! If you'd like to improve Space Cargo:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [ ] Online leaderboard (REST API + cloud database)
+- [ ] Mobile support (iOS / Android touch controls)
+- [ ] New enemy types (homing missiles, shielded drones)
+- [ ] In-game level editor
+- [ ] Achievement leaderboard per level
+- [ ] Cloud save (Unity Gaming Services / Firebase)
+- [ ] Multiplayer co-op mode
+- [ ] Procedural music system
+- [ ] Additional lander skins and unlockable cosmetics
+      
+---
 
 ## 👤 Author
 
 **Manasha**
 - GitHub: [@manasha-12](https://github.com/manasha-12)
 
-## 🙏 Acknowledgments
+---
 
-- Unity Technologies for the game engine
-- Inspired by classic Lunar Lander arcade games
-- Community feedback and testing
+## 🙏 Acknowledgements
+
+- [Unity Technologies](https://unity.com) — game engine
+- [Box2D](https://box2d.org) — 2D physics foundation (via Unity PhysX2D)
+- Classic Lunar Lander (Atari, 1979) — genre inspiration
+- [UK Game Accessibility Guidelines](https://gameaccessibilityguidelines.com) — controller navigation standards
 
 ---
 
-**⭐ If you enjoyed this project, please consider giving it a star!**
-
----
-
-*Made with ❤️ and Unity*
+*Made with ❤️ and Unity 6*
