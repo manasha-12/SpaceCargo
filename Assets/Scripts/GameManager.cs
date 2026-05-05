@@ -1,18 +1,16 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
-using UnityEngine.SocialPlatforms.Impl;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private CinemachineCamera cinemachineCamera;
-
     [SerializeField] private InputActionAsset inputActionsAsset;
 
     private GameLevel currentLoadedLevel;
@@ -22,6 +20,7 @@ public class GameManager : MonoBehaviour
 
     private static int levelNumber = 1;
     private static int totalScore;
+
     [SerializeField] private List<GameLevel> gameLevelList;
 
     public static void ResetStaticData()
@@ -45,7 +44,6 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
@@ -63,25 +61,32 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         if (highScore == 0)
-        {
             highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
-        }
 
-        // Check if starting from a specific level (from Level Selection)
-        if (PlayerPrefs.HasKey("StartLevel"))
+        // Only handle GameScene if the game launched directly into it
+        // (e.g. pressing Play in the Unity Editor on GameScene directly)
+        if (SceneManager.GetActiveScene().name == "GameScene" && !hasLoadedLevel)
         {
-            levelNumber = PlayerPrefs.GetInt("StartLevel");
-            PlayerPrefs.DeleteKey("StartLevel"); // Clear after reading
-            totalScore = 0; // Reset score when starting from level select
-        }
-
-        if (SceneManager.GetActiveScene().name == "GameScene")
-        {
+            ReadStartLevelFromPrefs();
             SubscribeToEvents();
             LoadCurrentLevel();
             hasLoadedLevel = true;
         }
     }
+
+    // ── KEY FIX ──────────────────────────────────────────────────────────────
+    // Read the StartLevel key HERE — this runs every time GameScene loads,
+    // unlike Start() which only fires once on the DontDestroyOnLoad object.
+    private void ReadStartLevelFromPrefs()
+    {
+        if (PlayerPrefs.HasKey("StartLevel"))
+        {
+            levelNumber = PlayerPrefs.GetInt("StartLevel");
+            PlayerPrefs.DeleteKey("StartLevel");
+            Debug.Log($"GameManager: StartLevel read — loading level {levelNumber}");
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -90,7 +95,6 @@ public class GameManager : MonoBehaviour
         if (uiModule != null && inputActionsAsset != null)
         {
             uiModule.actionsAsset = inputActionsAsset;
-
             uiModule.point = InputActionReference.Create(inputActionsAsset.FindAction("Player/Point"));
             uiModule.leftClick = InputActionReference.Create(inputActionsAsset.FindAction("Player/LeftClick"));
             uiModule.move = InputActionReference.Create(inputActionsAsset.FindAction("Player/Navigate"));
@@ -101,35 +105,30 @@ public class GameManager : MonoBehaviour
 
         if (scene.name == "GameScene" && !hasLoadedLevel)
         {
-            // Find camera reference again since it was lost
+            // ── Read the selected level BEFORE loading it ──────────────────
+            ReadStartLevelFromPrefs();
+
             cinemachineCamera = FindFirstObjectByType<CinemachineCamera>();
 
             SubscribeToEvents();
             LoadCurrentLevel();
             hasLoadedLevel = true;
 
-            // Reset achievement tracking for new level
+            // Reset achievement tracking for the new level
             if (AchievementManager.Instance != null)
             {
                 AchievementManager.Instance.ResetLevelTracking();
 
-                // Count coins in the loaded level
                 if (currentLoadedLevel != null)
-                {
-                    int coinCount = currentLoadedLevel.GetCoinCount();
-                    AchievementManager.Instance.SetTotalCoinsInLevel(coinCount);
-                }
+                    AchievementManager.Instance.SetTotalCoinsInLevel(
+                        currentLoadedLevel.GetCoinCount());
             }
         }
         else if (scene.name != "GameScene")
         {
-            // Clear pause event subscriptions when leaving GameScene
             OnGamePaused = null;
             OnGameUnPaused = null;
-
             hasLoadedLevel = false;
-
-            // Ensure game is unpaused
             Time.timeScale = 1f;
         }
     }
@@ -155,39 +154,34 @@ public class GameManager : MonoBehaviour
     }
 
     private void GameInput_OnMenuButtonPressed(object sender, EventArgs e)
-    {
-        PauseUnPauseGame();
-    }
+        => PauseUnPauseGame();
 
     private void LoadCurrentLevel()
     {
         if (currentLoadedLevel != null)
         {
             Destroy(currentLoadedLevel.gameObject);
+            currentLoadedLevel = null;
         }
 
         GameLevel gamelevel = GetGameLevel();
 
         if (gamelevel == null)
         {
-            Debug.LogError($"No level found for level number {levelNumber}!");
+            Debug.LogError($"GameManager: No level found for level number {levelNumber}!");
             return;
         }
 
         currentLoadedLevel = Instantiate(gamelevel, Vector3.zero, Quaternion.identity);
 
-       
         if (levelNumber >= 4)
         {
-            ProceduralLevelGenerator generator = currentLoadedLevel.GetComponent<ProceduralLevelGenerator>();
+            ProceduralLevelGenerator generator =
+                currentLoadedLevel.GetComponent<ProceduralLevelGenerator>();
             if (generator != null)
-            {
                 generator.GenerateLevel(levelNumber);
-            }
             else
-            {
-                Debug.LogError("ProceduralLevelGenerator not found on level!");
-            }
+                Debug.LogError("GameManager: ProceduralLevelGenerator not found on level!");
         }
 
         if (Lander.Instance != null)
@@ -197,56 +191,40 @@ public class GameManager : MonoBehaviour
         }
 
         if (cinemachineCamera == null)
-        {
             cinemachineCamera = FindFirstObjectByType<CinemachineCamera>();
-        }
 
-        if (cinemachineCamera != null && currentLoadedLevel.GetCameraStartTargetTransform() != null)
-        {
-            cinemachineCamera.Target.TrackingTarget = currentLoadedLevel.GetCameraStartTargetTransform();
-        }
+        if (cinemachineCamera != null &&
+            currentLoadedLevel.GetCameraStartTargetTransform() != null)
+            cinemachineCamera.Target.TrackingTarget =
+                currentLoadedLevel.GetCameraStartTargetTransform();
 
         if (CinemachineCameraZoom2D.Instance != null)
-        {
-            CinemachineCameraZoom2D.Instance.SetTargetOrthographicSize(currentLoadedLevel.GetZoomedOutOrthographicSize());
-        }
+            CinemachineCameraZoom2D.Instance.SetTargetOrthographicSize(
+                currentLoadedLevel.GetZoomedOutOrthographicSize());
+
+        Debug.Log($"GameManager: Loaded level {levelNumber}");
     }
 
     private System.Collections.IEnumerator ResetHealthAfterFrame()
     {
         yield return null;
-
-        if (Lander.Instance != null)
-        {
-            Lander.Instance.ResetHealth();
-        }
+        Lander.Instance?.ResetHealth();
     }
 
     private GameLevel GetGameLevel()
     {
-        // For levels 1-3, use hand-made levels
+        // Levels 1–3: hand-crafted
         if (levelNumber <= 3)
         {
-            foreach (GameLevel gamelevel in gameLevelList)
-            {
-                if (gamelevel.GetLevelNumber() == levelNumber)
-                {
-                    return gamelevel;
-                }
-            }
+            foreach (GameLevel gl in gameLevelList)
+                if (gl.GetLevelNumber() == levelNumber) return gl;
         }
 
-        // For level 4+, use procedural generation
+        // Level 4+: procedural — use the prefab marked as level 4
         if (levelNumber >= 4)
         {
-            // Find the procedural level prefab
-            foreach (GameLevel gamelevel in gameLevelList)
-            {
-                if (gamelevel.GetLevelNumber() == 4) // ProceduralLevel has level number 4
-                {
-                    return gamelevel;
-                }
-            }
+            foreach (GameLevel gl in gameLevelList)
+                if (gl.GetLevelNumber() == 4) return gl;
         }
 
         return null;
@@ -254,30 +232,19 @@ public class GameManager : MonoBehaviour
 
     private void Lander_OnStateChange(object sender, Lander.OnStateChangedEventAgrs e)
     {
-        // Show achievements when lander is in waiting state (before player presses anything)
         if (e.state == Lander.State.WaitingToStart)
         {
             if (AchievementManager.Instance != null)
             {
-                // Count coins in current level for CollectAllCoins achievement
                 if (currentLoadedLevel != null)
-                {
-                    int coinCount = currentLoadedLevel.GetCoinCount();
-                    AchievementManager.Instance.SetTotalCoinsInLevel(coinCount);
-                }
-
-                // Reset tracking for new level session
+                    AchievementManager.Instance.SetTotalCoinsInLevel(
+                        currentLoadedLevel.GetCoinCount());
                 AchievementManager.Instance.ResetLevelTracking();
             }
 
-            // Show pre-level achievements panel
-            if (AchievementUI.Instance != null)
-            {
-                AchievementUI.Instance.ShowPreLevelAchievements(levelNumber, () => { });
-            }
+            AchievementUI.Instance?.ShowPreLevelAchievements(levelNumber, () => { });
         }
 
-        // Hide achievement panel when player starts moving
         if (e.state == Lander.State.Normal)
         {
             AchievementUI.Instance?.HidePreLevel();
@@ -288,8 +255,7 @@ public class GameManager : MonoBehaviour
             if (cinemachineCamera != null && Lander.Instance != null)
                 cinemachineCamera.Target.TrackingTarget = Lander.Instance.transform;
 
-            if (CinemachineCameraZoom2D.Instance != null)
-                CinemachineCameraZoom2D.Instance.SetNormalOrthographicSize();
+            CinemachineCameraZoom2D.Instance?.SetNormalOrthographicSize();
         }
 
         isTimerActive = e.state == Lander.State.Normal;
@@ -297,51 +263,45 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (isTimerActive)
-        {
-            time += Time.deltaTime;
-        }
+        if (isTimerActive) time += Time.deltaTime;
     }
 
     private void Lander_OnLanded(object sender, Lander.OnLandedEventArgs e)
-    {
-        AddScore(e.score);
-    }
+        => AddScore(e.score);
 
-    private void Lander_OnCoinPickup(object sender, System.EventArgs e)
+    private void Lander_OnCoinPickup(object sender, EventArgs e)
     {
         AddScore(500);
         AchievementManager.Instance?.OnCoinCollected();
     }
 
-    public void AddScore(int addScoreAmount)
-    {
-        score += addScoreAmount;
-    }
+    public void AddScore(int amount) => score += amount;
+    public int GetScore() => score;
+    public float GetTime() => time;
+    public int GetTotalScore() => totalScore + score;
+    public int GetLevelNumber() => levelNumber;
+    public int GetHighScore() => highScore;
+    public bool IsNewHighScore() => (totalScore + score) > highScore;
+    public bool IsGameOver() => Lander.Instance != null &&
+                                        Lander.Instance.GetCurrentHealth() <= 0;
 
-    public int GetScore()
+    public void CheckAndSaveHighScore()
     {
-        return score;
-    }
-
-    public float GetTime()
-    {
-        return time;
-    }
-
-    public int GetTotalScore()
-    {
-        return totalScore + score;
+        int total = totalScore + score;
+        if (total > highScore)
+        {
+            highScore = total;
+            PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
+            PlayerPrefs.Save();
+        }
     }
 
     public void GoToNextLevel()
     {
-        // Calculate stars based on score (simple example)
         int stars = 1;
         if (score > 1000) stars = 2;
         if (score > 3000) stars = 3;
 
-        // Save level completion data
         LevelSelectionManager.SetLevelStars(levelNumber, stars);
         LevelSelectionManager.SetLevelBestScore(levelNumber, score);
 
@@ -360,33 +320,31 @@ public class GameManager : MonoBehaviour
         }
 
         if (GetGameLevel() == null)
-        {
             SceneLoader.LoadScene(SceneLoader.Scene.GameOverScene);
-        }
         else
-        {
             SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
-        }
     }
 
     public void RetryLevel()
     {
-        score = 0;
-        time = 0;
-        hasLoadedLevel = false;
-
+        score = 0; time = 0; hasLoadedLevel = false;
         if (currentLoadedLevel != null)
         {
             Destroy(currentLoadedLevel.gameObject);
             currentLoadedLevel = null;
         }
-
         SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 
-    public int GetLevelNumber()
+    public void RetryCurrentLevel()
     {
-        return levelNumber;
+        score = 0; time = 0; hasLoadedLevel = false;
+        if (currentLoadedLevel != null)
+        {
+            Destroy(currentLoadedLevel.gameObject);
+            currentLoadedLevel = null;
+        }
+        SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
     }
 
     public void PauseGame()
@@ -403,59 +361,7 @@ public class GameManager : MonoBehaviour
 
     public void PauseUnPauseGame()
     {
-        if (Time.timeScale == 1f)
-        {
-            PauseGame();
-        }
-        else
-        {
-            UnPauseGame();
-        }
-    }
-
-    public void CheckAndSaveHighScore()
-    {
-        int total = totalScore + score;
-        if (total > highScore)
-        {
-            highScore = total;
-            PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
-            PlayerPrefs.Save();
-        }
-    }
-
-    public int GetHighScore()
-    {
-        return highScore;
-    }
-
-    public bool IsNewHighScore()
-    {
-        return (totalScore + score) > highScore;
-    }
-
-    public bool IsGameOver()
-    {
-        // Check if Lander has no health remaining
-        if (Lander.Instance != null)
-            return Lander.Instance.GetCurrentHealth() <= 0;
-        return false;
-    }
-
-    // Retries same level without resetting to level 1
-    public void RetryCurrentLevel()
-    {
-        score = 0;
-        time = 0;
-        hasLoadedLevel = false;
-
-        if (currentLoadedLevel != null)
-        {
-            Destroy(currentLoadedLevel.gameObject);
-            currentLoadedLevel = null;
-        }
-
-        SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+        if (Time.timeScale == 1f) PauseGame();
+        else UnPauseGame();
     }
 }
-
